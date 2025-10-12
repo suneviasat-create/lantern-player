@@ -6,17 +6,20 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    --bg:#0f1116;
+    /* Theme + brand */
+    --bg: transparent;          /* inherit Glide dark; no visible outer box */
     --text:#ffffff;
     --muted:#9aa0a6;
-    --wave:#2a3340;      /* remainder */
-    --prog:#0a84ff;      /* progress blue */
-    --ring:#ffffff26;
+
+    --wave:#2a3340;             /* remainder bars */
+    --prog:#0a84ff;             /* progress blue */
+    --ring:#2a2f38;             /* subtle border for the pill */
 
     --gutter:12px;
     --wave-h:96px;
-    --panel-r:14px;
+    --pill-r:18px;
   }
+
   html,body{
     margin:0; padding:0; background:var(--bg);
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
@@ -24,39 +27,43 @@
   }
   .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box}
 
-  /* Title block */
+  /* Title */
   .titleblk{margin:8px 0 8px 0}
   .song{font-size:18px;font-weight:800;letter-spacing:.2px;line-height:1.2}
   .artist{font-size:12px;color:var(--muted);margin-top:2px}
 
-  /* Dark panel for waveform area */
-.panel{
-  background:#0f1116;              /* matches Glide background */
-  border:1px solid #1c1f26;        /* subtle border for depth */
-  border-radius:var(--panel-r);
-  padding:12px;
-  box-shadow:0 0 15px rgba(0,0,0,.15) inset;  /* soft inner shading */
-}
+  /* OUTER PANEL: transparent so it blends with Glide */
+  .panel{ padding:0; background:transparent; }
 
-/* Waveform */
-#wave{
-  width:100%;
-  height:var(--wave-h);
-  border-radius:10px;
-  overflow:hidden;
-  background:transparent;
-}
+  /* Inner pill around waveform/timecodes (very subtle) */
+  .pill{
+    background:rgba(255,255,255,0.02);      /* ultra subtle fill so bars stand out */
+    border:1px solid var(--ring);
+    border-radius:var(--pill-r);
+    padding:12px 14px 14px 14px;
+  }
 
-  /* Timecodes + controls BELOW the waveform */
+  /* Waveform canvas */
+  #wave{
+    width:100%;
+    height:var(--wave-h);
+    border-radius:12px;
+    overflow:hidden;
+    background:transparent;
+  }
+
+  /* Footer row: timecodes left/right, play centered BELOW waveform */
   .footerRow{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     margin-top:10px;
   }
-  .timeL,.timeR{font-size:12px; color:var(--muted); letter-spacing:.2px}
+  .time{font-size:12px; color:var(--muted); letter-spacing:.2px}
   .controls{display:flex;justify-content:center;align-items:center;flex:1}
   .playbtn{
-    width:56px;height:56px;border-radius:50%; border:1px solid var(--ring);
-    background:#ffffff1a; backdrop-filter:blur(6px); display:grid;place-items:center; cursor:pointer;
+    width:56px;height:56px;border-radius:50%;
+    border:1px solid #ffffff28;
+    background:#ffffff1a; backdrop-filter:blur(6px);
+    display:grid;place-items:center; cursor:pointer;
   }
   .playbtn svg{width:22px;height:22px;fill:var(--text)}
 
@@ -69,78 +76,83 @@
 </head>
 <body>
   <div class="wrap">
-    <!-- Title block -->
+    <!-- Title -->
     <div class="titleblk">
       <div id="song" class="song">Track</div>
       <div id="artist" class="artist">Artist</div>
     </div>
 
-    <!-- Waveform panel -->
+    <!-- Transparent panel; only the inner pill is visible -->
     <div class="panel">
-      <div id="wave"></div>
+      <div class="pill">
+        <div id="wave"></div>
 
-      <!-- Footer row: timecodes left/right, play centered -->
-      <div class="footerRow">
-        <div id="tLeft" class="timeL">0:00</div>
-        <div class="controls">
-          <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
-            <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
-          </button>
+        <!-- Timecodes + big play below waveform -->
+        <div class="footerRow">
+          <div id="tLeft"  class="time">0:00</div>
+          <div class="controls">
+            <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
+              <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+          </div>
+          <div id="tRight" class="time">0:00</div>
         </div>
-        <div id="tRight" class="timeR">0:00</div>
       </div>
     </div>
   </div>
 
-  <!-- hidden native audio -->
+  <!-- Hidden native audio for iOS background play -->
   <audio id="media" preload="auto" playsinline></audio>
 
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    // Params
+    // --- Params from Glide ---
     const p = new URLSearchParams(location.search);
     const AUDIO_URL = p.get('audio')  || './demo.mp3';
     const TITLE     = p.get('title')  || 'Track';
-    const ARTIST    = p.get('artist') || 'Artist';
+    const ARTIST    = p.get('artist') || 'Contributor';
+
     song.textContent   = TITLE;
     artist.textContent = ARTIST;
 
-    // Media
+    // --- Media element (iOS-friendly) ---
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
     (async()=>{ try{ await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); }catch(_){}})();
 
-    // Wavesurfer
+    // --- WaveSurfer ---
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
       backend:'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
+      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),  // remainder
+      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(), // blue
       cursorColor:'rgba(255,255,255,.35)',
       barWidth:2, barGap:1,
       normalize:true, responsive:true, dragToSeek:true,
       fillParent:true
     });
 
-    // Timecodes
+    // --- Dual timecodes BELOW the waveform ---
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     let dur = 0;
-    ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
+    ws.on('ready',  ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
+    ws.on('seek',   ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // Play/Pause
+    // --- Play/Pause ---
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
-    function syncIcon(){ icon.innerHTML = media.paused ? '<path d=\"M8 5v14l11-7z\"/>' : '<path d=\"M6 5h4v14H6zm8 0h4v14h-4z\"/>'; }
+    function syncIcon(){ icon.innerHTML = media.paused ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; }
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
+
+    // Spacebar toggle for desktop preview
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
   </script>
 </body>
