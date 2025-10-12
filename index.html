@@ -3,149 +3,143 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Luxury Waveform Player — Compact (Final Balance)</title>
-
-<link rel="preload" as="audio" href="./demo.mp3" />
+<title>Lantern Player</title>
 
 <style>
   :root{
-    --text:#0a0a0a;
-    --muted:#5f6368;
-    --wave:#0000001f;     /* idle bars (~12% black) */
-    --prog:#0a84ff;       /* progress (iOS blue) */
-    --ring:#00000014;
-    --card:#fff;
-    --shadow:0 8px 24px rgba(0,0,0,.06);
-    --radius:14px;
+    /* Dark theme + brand */
+    --bg: transparent;        /* keep transparent so it blends inside Glide dark mode */
+    --text:#ffffff;
+    --muted:#9aa0a6;
+    --wave:#2a3340;           /* idle bars (dark gray-blue) */
+    --prog:#0a84ff;           /* progress blue */
+    --ring:#ffffff14;
 
     --gutter:12px;
-    --btn:36px;
-    --wave-h:74px;        /* compact wave height for Glide “small” */
+    --wave-h:78px;            /* compact, fits Glide's small height */
+    --play-size:56px;         /* big centered button */
   }
 
   html,body{
-    margin:0; padding:0; background:transparent;
+    margin:0; padding:0; background:var(--bg);
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
     color:var(--text); -webkit-font-smoothing:antialiased; overflow:hidden;
   }
 
   .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box}
 
-  /* Header */
-  .row{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:6px 0 6px 0;
-  }
-  .time{font-size:12px;color:var(--muted);letter-spacing:.2px;line-height:var(--btn)}
+  /* Title & artist */
+  .titleblk{margin:8px 0 4px 0}
+  .song{font-size:18px;font-weight:800;letter-spacing:.2px;line-height:1.2}
+  .artist{font-size:12px;color:var(--muted);margin-top:2px}
 
-  .iconbtn{
-    width:var(--btn);height:var(--btn);
-    border-radius:50%;
-    border:1px solid var(--ring);
-    background:var(--card);
-    box-shadow:0 1px 0 rgba(255,255,255,.5) inset;
-    display:grid;place-items:center;
-    cursor:pointer;outline:none;
-  }
-  .iconbtn:active{transform:translateY(1px)}
-  .iconbtn svg{width:16px;height:16px;fill:var(--text)}
+  /* Time row above the waveform: 0:00 left / dur right */
+  .times{display:flex;justify-content:space-between;align-items:center;color:var(--muted);
+         font-size:12px;letter-spacing:.2px;margin:4px 0 6px 0}
 
-  /* Waveform — bottom tightened by 1 px */
-  #wave{
-    width:100%;
-    height:var(--wave-h);
-    border-radius:10px;
-    overflow:hidden;
-    background:transparent;
-    margin-top:4px;
-    margin-bottom:14px; /* was 15px → tighter by 1px */
-  }
+  /* Waveform surface */
+  .wavebox{position:relative}
+  #wave{width:100%;height:var(--wave-h);border-radius:10px;overflow:hidden;background:transparent}
 
-  /* Details */
-  .details{
-    background:var(--card);
-    border-radius:var(--radius);
-    border:1px solid var(--ring);
-    box-shadow:var(--shadow);
-    padding:12px;
+  /* Big centered play/pause under wave */
+  .controls{display:flex;justify-content:center;align-items:center;margin:8px 0 0 0}
+  .playbtn{
+    width:var(--play-size);height:var(--play-size);border-radius:50%;
+    border:1px solid var(--ring);background:#ffffff12;backdrop-filter:blur(4px);
+    display:grid;place-items:center;cursor:pointer;
   }
-  .title{font-size:20px;font-weight:800;letter-spacing:.1px;line-height:1.25;margin:2px 0 2px 0}
-  .subtitle{font-size:13px;color:var(--muted);margin:0 0 6px 0}
-  .hr{height:1px;background:var(--ring);border:0;margin:10px 0 12px 0}
-  .sectionTitle{font-size:15px;font-weight:800;margin:0 0 10px 0;letter-spacing:.2px}
-  .grid{display:grid;grid-template-columns:110px 1fr;gap:8px 14px}
-  .label{font-size:12px;color:var(--muted);letter-spacing:.2px}
-  .value{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .playbtn svg{width:22px;height:22px;fill:var(--text)}
 
-  @media (max-width:360px){ :root{ --btn:34px; --wave-h:70px } .grid{grid-template-columns:100px 1fr} }
+  /* Small screens tweak */
+  @media (max-width:360px){
+    :root{ --wave-h:72px; --play-size:52px; }
+    .song{font-size:16px}
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Header -->
-    <div class="row">
-      <div id="status" class="time">0:00 / 0:00</div>
-      <button id="toggle" class="iconbtn" aria-label="Play / Pause" title="Play / Pause">
-        <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
-      </button>
+    <!-- Title block (from query params) -->
+    <div class="titleblk">
+      <div id="song" class="song">Track</div>
+      <div id="artist" class="artist">Artist</div>
+    </div>
+
+    <!-- Timecodes row -->
+    <div class="times">
+      <div id="tLeft">0:00</div>
+      <div id="tRight">0:00</div>
     </div>
 
     <!-- Waveform -->
-    <div id="wave"></div>
+    <div class="wavebox">
+      <div id="wave"></div>
+    </div>
 
-    <!-- Details -->
-    <div class="details">
-      <div class="title">RATDL (WIP).v3</div>
-      <div class="subtitle">baresongs</div>
-      <hr class="hr" />
-      <div class="sectionTitle">Song Details</div>
-      <div class="grid">
-        <div class="label">Added</div>  <div class="value">October 8, 2025 at 3:57 PM</div>
-        <div class="label">Source</div> <div class="value">Attachment</div>
-      </div>
+    <!-- Big centered play/pause -->
+    <div class="controls">
+      <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
+        <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
+      </button>
     </div>
   </div>
 
+  <!-- Hidden native audio (background play on iOS) -->
   <audio id="media" preload="auto" playsinline></audio>
 
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    const params = new URLSearchParams(location.search);
-    const AUDIO_URL = params.get('audio') || './demo.mp3';
+    // --- Params ---
+    const p = new URLSearchParams(location.search);
+    const AUDIO_URL = p.get('audio') || './demo.mp3';
+    const TITLE     = p.get('title') || 'Track';
+    const ARTIST    = p.get('artist') || 'Artist';
 
+    // --- Title block ---
+    song.textContent = TITLE;
+    artist.textContent = ARTIST;
+
+    // --- Media element (keeps playing on screen lock) ---
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
-
+    // warm cache for snappier first play
     (async()=>{ try{ await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); }catch(_){}})();
 
+    // --- WaveSurfer ---
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
       backend:'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(0,0,0,.28)',
+      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
+      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
+      cursorColor:'rgba(255,255,255,.35)',
       barWidth:2, barGap:1,
       normalize:true, responsive:true, dragToSeek:true,
       fillParent:true
     });
 
+    // --- Time labels (dual-sided) ---
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
-    const status = document.getElementById('status');
+    const tLeft = document.getElementById('tLeft');
+    const tRight = document.getElementById('tRight');
+
+    let dur = 0;
+    ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
+    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+
+    // --- Play/Pause button ---
     const btn = document.getElementById('toggle');
     const icon = document.getElementById('icon');
-    let dur = 0;
-
-    ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; status.textContent = `0:00 / ${fmt(dur)}`; });
-    media.addEventListener('timeupdate', ()=>{ status.textContent = `${fmt(media.currentTime)} / ${fmt(dur || media.duration || 0)}`; });
-
     btn.onclick = ()=>{
-      if (media.paused) { media.play(); icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; }
-      else { media.pause(); icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; }
+      ws.playPause();
+      // sync icon with media state
+      if (media.paused) icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      else icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
     };
-
+    // also toggle with Spacebar (desktop)
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
   </script>
 </body>
