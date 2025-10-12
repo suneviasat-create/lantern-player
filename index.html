@@ -6,18 +6,18 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    /* Theme + brand */
-    --bg: transparent;          /* inherit Glide dark; no visible outer box */
+    /* inherit Glide’s background — keep everything transparent */
+    --bg: transparent;
+
+    /* typography & colors */
     --text:#ffffff;
     --muted:#9aa0a6;
+    --wave:#2a3340;     /* remainder bars (dark gray-blue) */
+    --prog:#0a84ff;     /* progress blue */
 
-    --wave:#2a3340;             /* remainder bars */
-    --prog:#0a84ff;             /* progress blue */
-    --ring:#2a2f38;             /* subtle border for the pill */
-
+    /* layout */
     --gutter:12px;
     --wave-h:96px;
-    --pill-r:18px;
   }
 
   html,body{
@@ -27,77 +27,51 @@
   }
   .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box}
 
-  /* Title */
-  .titleblk{margin:8px 0 8px 0}
-  .song{font-size:18px;font-weight:800;letter-spacing:.2px;line-height:1.2}
-  .artist{font-size:12px;color:var(--muted);margin-top:2px}
-
-  /* OUTER PANEL: transparent so it blends with Glide */
-  .panel{ padding:0; background:transparent; }
-
-  /* Inner pill around waveform/timecodes (very subtle) */
-  .pill{
-    background:rgba(255,255,255,0.02);      /* ultra subtle fill so bars stand out */
-    border:1px solid var(--ring);
-    border-radius:var(--pill-r);
-    padding:12px 14px 14px 14px;
-  }
-
-  /* Waveform canvas */
+  /* Waveform only (no panel, no border) */
   #wave{
     width:100%;
     height:var(--wave-h);
-    border-radius:12px;
+    background:transparent;     /* no card */
+    border-radius:12px;          /* you can set 0 if you want squared ends */
     overflow:hidden;
-    background:transparent;
   }
 
-  /* Footer row: timecodes left/right, play centered BELOW waveform */
+  /* Footer row BELOW waveform: time left / play / time right */
   .footerRow{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     margin-top:10px;
   }
-  .time{font-size:12px; color:var(--muted); letter-spacing:.2px}
+  .time{font-size:12px;color:var(--muted);letter-spacing:.2px}
   .controls{display:flex;justify-content:center;align-items:center;flex:1}
+
+  /* Big play/pause button (clean circle), no extra rings around the player */
   .playbtn{
     width:56px;height:56px;border-radius:50%;
-    border:1px solid #ffffff28;
-    background:#ffffff1a; backdrop-filter:blur(6px);
-    display:grid;place-items:center; cursor:pointer;
+    border:0; background:#ffffff1a; backdrop-filter:blur(6px);
+    display:grid; place-items:center; cursor:pointer;
   }
-  .playbtn svg{width:22px;height:22px;fill:var(--text)}
+  .playbtn svg{width:22px;height:22px;fill:#ffffff}
 
   @media (max-width:360px){
     :root{ --wave-h:88px }
-    .song{font-size:16px}
     .playbtn{ width:52px; height:52px }
   }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Title -->
-    <div class="titleblk">
-      <div id="song" class="song">Track</div>
-      <div id="artist" class="artist">Artist</div>
-    </div>
+    <!-- Waveform -->
+    <div id="wave"></div>
 
-    <!-- Transparent panel; only the inner pill is visible -->
-    <div class="panel">
-      <div class="pill">
-        <div id="wave"></div>
-
-        <!-- Timecodes + big play below waveform -->
-        <div class="footerRow">
-          <div id="tLeft"  class="time">0:00</div>
-          <div class="controls">
-            <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
-              <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-          </div>
-          <div id="tRight" class="time">0:00</div>
-        </div>
+    <!-- Timecodes + play BELOW -->
+    <div class="footerRow">
+      <div id="tLeft"  class="time">0:00</div>
+      <div class="controls">
+        <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
+          <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
       </div>
+      <div id="tRight" class="time">0:00</div>
     </div>
   </div>
 
@@ -106,45 +80,42 @@
 
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    // --- Params from Glide ---
+    // Params from Glide
     const p = new URLSearchParams(location.search);
-    const AUDIO_URL = p.get('audio')  || './demo.mp3';
-    const TITLE     = p.get('title')  || 'Track';
-    const ARTIST    = p.get('artist') || 'Contributor';
+    const AUDIO_URL = p.get('audio') || './demo.mp3';
 
-    song.textContent   = TITLE;
-    artist.textContent = ARTIST;
-
-    // --- Media element (iOS-friendly) ---
+    // Media element
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
-    (async()=>{ try{ await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); }catch(_){}})();
+    // Warm the cache for snappier first play
+    (async()=>{ try { await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); } catch(_) {} })();
 
-    // --- WaveSurfer ---
+    // WaveSurfer (MediaElement backend = keeps playing on screen lock)
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
       backend:'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),  // remainder
-      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(), // blue
+      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
+      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
       cursorColor:'rgba(255,255,255,.35)',
       barWidth:2, barGap:1,
       normalize:true, responsive:true, dragToSeek:true,
       fillParent:true
     });
 
-    // --- Dual timecodes BELOW the waveform ---
+    // Timecodes
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     let dur = 0;
-    ws.on('ready',  ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
-    ws.on('seek',   ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // --- Play/Pause ---
+    ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
+    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+
+    // Play/Pause
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){ icon.innerHTML = media.paused ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; }
@@ -152,7 +123,7 @@
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
 
-    // Spacebar toggle for desktop preview
+    // Spacebar for desktop preview
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
   </script>
 </body>
