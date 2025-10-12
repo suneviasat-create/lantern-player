@@ -4,20 +4,19 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Lantern Player</title>
-
 <style>
   :root{
     /* Dark theme + brand */
-    --bg: transparent;        /* keep transparent so it blends inside Glide dark mode */
+    --bg:#0f1116;             /* solid dark so the iframe isn’t white */
     --text:#ffffff;
     --muted:#9aa0a6;
     --wave:#2a3340;           /* idle bars (dark gray-blue) */
     --prog:#0a84ff;           /* progress blue */
-    --ring:#ffffff14;
+    --ring:#ffffff26;
 
     --gutter:12px;
-    --wave-h:78px;            /* compact, fits Glide's small height */
-    --play-size:56px;         /* big centered button */
+    --wave-h:96px;            /* a bit taller for presence */
+    --panel-r:14px;
   }
 
   html,body{
@@ -25,121 +24,124 @@
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
     color:var(--text); -webkit-font-smoothing:antialiased; overflow:hidden;
   }
-
   .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box}
 
-  /* Title & artist */
-  .titleblk{margin:8px 0 4px 0}
+  /* Title block */
+  .titleblk{margin:8px 0 6px 0}
   .song{font-size:18px;font-weight:800;letter-spacing:.2px;line-height:1.2}
   .artist{font-size:12px;color:var(--muted);margin-top:2px}
 
-  /* Time row above the waveform: 0:00 left / dur right */
-  .times{display:flex;justify-content:space-between;align-items:center;color:var(--muted);
-         font-size:12px;letter-spacing:.2px;margin:4px 0 6px 0}
+  /* Dark panel that holds timecodes + waveform */
+  .panel{
+    position:relative;
+    background:#171a20;
+    border:1px solid var(--ring);
+    border-radius:var(--panel-r);
+    padding:10px 10px 14px 10px;
+  }
 
-  /* Waveform surface */
-  .wavebox{position:relative}
+  /* Timecodes row */
+  .times{
+    display:flex;justify-content:space-between;align-items:center;
+    color:var(--muted); font-size:12px; letter-spacing:.2px; margin:0 2px 6px 2px;
+  }
+
+  /* Waveform area */
+  .wavewrap{position:relative}
   #wave{width:100%;height:var(--wave-h);border-radius:10px;overflow:hidden;background:transparent}
 
-  /* Big centered play/pause under wave */
-  .controls{display:flex;justify-content:center;align-items:center;margin:8px 0 0 0}
-  .playbtn{
-    width:var(--play-size);height:var(--play-size);border-radius:50%;
-    border:1px solid var(--ring);background:#ffffff12;backdrop-filter:blur(4px);
-    display:grid;place-items:center;cursor:pointer;
+  /* Big play/pause centered OVER the waveform */
+  .centerPlay{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:66px; height:66px; border-radius:50%;
+    border:1px solid var(--ring); background:#ffffff1a; backdrop-filter:blur(6px);
+    display:grid; place-items:center; cursor:pointer;
   }
-  .playbtn svg{width:22px;height:22px;fill:var(--text)}
+  .centerPlay svg{width:24px;height:24px;fill:var(--text)}
 
-  /* Small screens tweak */
   @media (max-width:360px){
-    :root{ --wave-h:72px; --play-size:52px; }
+    :root{ --wave-h:88px }
     .song{font-size:16px}
+    .centerPlay{ width:60px; height:60px }
+    .centerPlay svg{ width:22px; height:22px }
   }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Title block (from query params) -->
+    <!-- Title block -->
     <div class="titleblk">
       <div id="song" class="song">Track</div>
       <div id="artist" class="artist">Artist</div>
     </div>
 
-    <!-- Timecodes row -->
-    <div class="times">
-      <div id="tLeft">0:00</div>
-      <div id="tRight">0:00</div>
-    </div>
+    <!-- Dark panel with times + waveform + centered play -->
+    <div class="panel">
+      <div class="times">
+        <div id="tLeft">0:00</div>
+        <div id="tRight">0:00</div>
+      </div>
 
-    <!-- Waveform -->
-    <div class="wavebox">
-      <div id="wave"></div>
-    </div>
-
-    <!-- Big centered play/pause -->
-    <div class="controls">
-      <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
-        <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
-      </button>
+      <div class="wavewrap">
+        <div id="wave"></div>
+        <button id="toggle" class="centerPlay" aria-label="Play / Pause" title="Play / Pause">
+          <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Hidden native audio (background play on iOS) -->
+  <!-- hidden native audio for background play on iOS -->
   <audio id="media" preload="auto" playsinline></audio>
 
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    // --- Params ---
+    // --- Params from Glide ---
     const p = new URLSearchParams(location.search);
-    const AUDIO_URL = p.get('audio') || './demo.mp3';
-    const TITLE     = p.get('title') || 'Track';
+    const AUDIO_URL = p.get('audio')  || './demo.mp3';
+    const TITLE     = p.get('title')  || 'Track';
     const ARTIST    = p.get('artist') || 'Artist';
 
-    // --- Title block ---
-    song.textContent = TITLE;
+    song.textContent   = TITLE;
     artist.textContent = ARTIST;
 
-    // --- Media element (keeps playing on screen lock) ---
+    // --- Media element ---
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
-    // warm cache for snappier first play
+    // warm the cache
     (async()=>{ try{ await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); }catch(_){}})();
 
-    // --- WaveSurfer ---
+    // --- WaveSurfer with MediaElement backend (iOS-friendly) ---
     const ws = WaveSurfer.create({
-      container:'#wave',
+      container: '#wave',
       media,
-      backend:'MediaElement',
+      backend: 'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.35)',
-      barWidth:2, barGap:1,
-      normalize:true, responsive:true, dragToSeek:true,
-      fillParent:true
+      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),  // remainder
+      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(), // blue
+      cursorColor: 'rgba(255,255,255,.35)',
+      barWidth: 2, barGap: 1,
+      normalize: true, responsive: true, dragToSeek: true,
+      fillParent: true
     });
 
-    // --- Time labels (dual-sided) ---
+    // --- Dual timecodes ---
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
-    const tLeft = document.getElementById('tLeft');
+    const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
-
     let dur = 0;
     ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // --- Play/Pause button ---
-    const btn = document.getElementById('toggle');
+    // --- Center play/pause ---
+    const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
-    btn.onclick = ()=>{
-      ws.playPause();
-      // sync icon with media state
-      if (media.paused) icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-      else icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
-    };
-    // also toggle with Spacebar (desktop)
+    function syncIcon(){ icon.innerHTML = media.paused ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; }
+    btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
+    media.addEventListener('play',  syncIcon);
+    media.addEventListener('pause', syncIcon);
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
   </script>
 </body>
