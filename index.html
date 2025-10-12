@@ -30,13 +30,22 @@
   .artist{font-size:12px;color:var(--muted);margin-top:2px}
 
   /* Dark panel for waveform area */
-  .panel{
-    background:#171a20;border:1px solid var(--ring);border-radius:var(--panel-r);
-    padding:12px;
-  }
+.panel{
+  background:#0f1116;              /* matches Glide background */
+  border:1px solid #1c1f26;        /* subtle border for depth */
+  border-radius:var(--panel-r);
+  padding:12px;
+  box-shadow:0 0 15px rgba(0,0,0,.15) inset;  /* soft inner shading */
+}
 
-  /* Waveform */
-  #wave{width:100%;height:var(--wave-h);border-radius:10px;overflow:hidden;background:transparent}
+/* Waveform */
+#wave{
+  width:100%;
+  height:var(--wave-h);
+  border-radius:10px;
+  overflow:hidden;
+  background:transparent;
+}
 
   /* Timecodes + controls BELOW the waveform */
   .footerRow{
