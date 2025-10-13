@@ -118,9 +118,47 @@
       .playbtn{ width:58px; height:58px; }
       .playbtn svg{ width:22px; height:22px; }
     }
+
+    /* Loading overlay - shows instantly, hides when ready */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #171717;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    #loader.hide { 
+      opacity: 0; 
+      pointer-events: none; 
+    }
+    
+    /* Subtle pulse dot */
+    .pulse {
+      width: 12px;
+      height: 12px;
+      background: #8c8c8c;
+      border-radius: 50%;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
   </style>
 </head>
 <body>
+  <!-- Loading overlay with pulse -->
+  <div id="loader">
+    <div class="pulse"></div>
+  </div>
+
   <div class="wrap">
     <div id="wave"></div>
 
@@ -170,7 +208,7 @@
     // Timecodes
     const fmt = s => (!isFinite(s)
       ? '0:00'
-      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);  // <-- fixed template literal
+      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
 
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
@@ -180,6 +218,11 @@
       dur = ws.getDuration() || media.duration || 0;
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
+      
+      // Hide loader when waveform is painted
+      setTimeout(() => {
+        document.getElementById('loader').classList.add('hide');
+      }, 100);
     });
 
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
