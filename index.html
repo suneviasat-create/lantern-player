@@ -6,12 +6,16 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    --bg:#171717;     /* exact Glide dark background */
-    --text:#FFFFFF;   /* true white */
-    --muted:#8c8c8c;  /* softer gray for time */
-    --wave:#2b2b2b;   /* waveform base */
-    --prog:#FFFFFF;   /* progress bar in pure white */
+    /* Exact app background */
+    --bg:#171717;
 
+    /* UI colors */
+    --text:#FFFFFF;     /* pure white for icon/time/progress */
+    --muted:#8c8c8c;    /* soft gray for time labels */
+    --wave:#2b2b2b;     /* waveform base */
+    --prog:#FFFFFF;     /* progress in pure white */
+
+    /* Layout */
     --gutter:12px;
     --wave-h:96px;
   }
@@ -19,8 +23,7 @@
   html,body{
     margin:0; padding:0; background:var(--bg);
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    color:var(--text);
-    -webkit-font-smoothing:antialiased;
+    color:var(--text); -webkit-font-smoothing:antialiased;
     overflow:hidden;
   }
 
@@ -32,48 +35,38 @@
     box-sizing:border-box;
   }
 
-  /* Waveform only — clean, no background box */
+  /* Waveform only — no boxes or panels */
   #wave{
-    width:100%;
-    height:var(--wave-h);
+    width:100%; height:var(--wave-h);
     background:transparent;
-    border-radius:12px;
-    overflow:hidden;
+    border-radius:12px; overflow:hidden;
   }
 
-  /* Footer with times and play button */
+  /* Footer row: time left / play / time right */
   .footerRow{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
     margin-top:12px;
   }
   .time{
-    font-size:12px;
-    color:var(--muted);
-    letter-spacing:.2px;
-    min-width:42px;
+    font-size:12px; color:var(--muted); letter-spacing:.2px; min-width:42px;
   }
-  .controls{
-    display:flex; justify-content:center; align-items:center; flex:1;
-  }
+  .controls{ display:flex; justify-content:center; align-items:center; flex:1; }
 
-  /* Luxury play/pause button */
+  /* Play button: static, matte, stronger white ring + white icon */
   .playbtn{
-    width:64px; height:64px;
-    border-radius:50%;
-    background:var(--bg);
-    border:2px solid rgba(255,255,255,0.3); /* crisp white ring */
-    display:grid; place-items:center;
-    cursor:pointer;
-    box-shadow:inset 0 0 10px rgba(255,255,255,0.05); /* subtle etched depth */
+    width:64px; height:64px; border-radius:50%;
+    background:var(--bg);                 /* same as page to melt in */
+    border:2px solid #FFFFFF;             /* stronger aura / ring */
+    display:grid; place-items:center; cursor:pointer;
+    box-shadow:none; outline:none;
+    -webkit-tap-highlight-color: transparent;
   }
-  .playbtn svg{
-    width:24px;
-    height:24px;
-    fill:var(--text);
+  .playbtn:focus, .playbtn:hover, .playbtn:active{
+    background:var(--bg);                 /* no color change on touch */
+    border-color:#FFFFFF;                 /* keep static */
+    outline:none; box-shadow:none;
   }
+  .playbtn svg{ width:24px; height:24px; fill:#FFFFFF; } /* pure white icon */
 
   @media (max-width:360px){
     :root{ --wave-h:88px }
@@ -84,8 +77,10 @@
 </head>
 <body>
   <div class="wrap">
+    <!-- Waveform -->
     <div id="wave"></div>
 
+    <!-- Timecodes + play BELOW -->
     <div class="footerRow">
       <div id="tLeft" class="time">0:00</div>
       <div class="controls">
@@ -97,17 +92,22 @@
     </div>
   </div>
 
+  <!-- Hidden native audio (background play on iOS) -->
   <audio id="media" preload="auto" playsinline></audio>
+
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
+    // Query param: ?audio=<S3 URL>
     const p = new URLSearchParams(location.search);
     const AUDIO_URL = p.get('audio') || './demo.mp3';
 
+    // Media
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
     (async()=>{ try{ await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); }catch(_){}})();
 
+    // WaveSurfer (MediaElement backend so iOS keeps playing on lock)
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
@@ -121,6 +121,7 @@
       fillParent:true
     });
 
+    // Dual timecodes below
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
@@ -134,17 +135,19 @@
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
+    // Play/Pause
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){
       icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+        ? '<path d="M8 5v14l11-7z"/>'                                  // play
+        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';                      // pause
     }
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
-    media.addEventListener('play', syncIcon);
+    media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
 
+    // Spacebar toggle for desktop preview
     addEventListener('keydown', e => {
       if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
