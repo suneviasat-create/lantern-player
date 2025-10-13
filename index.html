@@ -6,11 +6,12 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    --bg:#171717;
-    --text:#ffffff;
-    --muted:#9aa0a6;
-    --wave:#2a3340;
-    --prog:#0a84ff;
+    --bg:#171717;     /* exact Glide dark background */
+    --text:#FFFFFF;   /* true white */
+    --muted:#8c8c8c;  /* softer gray for time */
+    --wave:#2b2b2b;   /* waveform base */
+    --prog:#FFFFFF;   /* progress bar in pure white */
+
     --gutter:12px;
     --wave-h:96px;
   }
@@ -18,7 +19,9 @@
   html,body{
     margin:0; padding:0; background:var(--bg);
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    color:var(--text); -webkit-font-smoothing:antialiased; overflow:hidden;
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
   }
 
   .wrap{
@@ -29,6 +32,7 @@
     box-sizing:border-box;
   }
 
+  /* Waveform only — clean, no background box */
   #wave{
     width:100%;
     height:var(--wave-h);
@@ -37,12 +41,13 @@
     overflow:hidden;
   }
 
+  /* Footer with times and play button */
   .footerRow{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:10px;
-    margin-top:10px;
+    margin-top:12px;
   }
   .time{
     font-size:12px;
@@ -54,25 +59,25 @@
     display:flex; justify-content:center; align-items:center; flex:1;
   }
 
-  /* Clean matte play button (no hover/touch changes) */
+  /* Luxury play/pause button */
   .playbtn{
     width:64px; height:64px;
     border-radius:50%;
     background:var(--bg);
-    border:1px solid rgba(255,255,255,0.05);
+    border:2px solid rgba(255,255,255,0.3); /* crisp white ring */
     display:grid; place-items:center;
     cursor:pointer;
-    box-shadow:none;
+    box-shadow:inset 0 0 10px rgba(255,255,255,0.05); /* subtle etched depth */
   }
   .playbtn svg{
-    width:24px; height:24px;
-    fill:#ffffff;
-    opacity:0.9;
+    width:24px;
+    height:24px;
+    fill:var(--text);
   }
 
   @media (max-width:360px){
     :root{ --wave-h:88px }
-    .playbtn{ width:58px; height:58px }
+    .playbtn{ width:58px; height:58px; border-width:2px }
     .playbtn svg{ width:22px; height:22px }
   }
 </style>
@@ -80,6 +85,7 @@
 <body>
   <div class="wrap">
     <div id="wave"></div>
+
     <div class="footerRow">
       <div id="tLeft" class="time">0:00</div>
       <div class="controls">
@@ -109,7 +115,7 @@
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
       waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
       progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.35)',
+      cursorColor:'rgba(255,255,255,.4)',
       barWidth:2, barGap:1,
       normalize:true, responsive:true, dragToSeek:true,
       fillParent:true
