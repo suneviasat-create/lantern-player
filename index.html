@@ -6,11 +6,16 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    --bg:#171717;           /* exact Glide dark background */
+    /* Exact Glide dark */
+    --bg:#171717;
+
+    /* UI colors */
     --text:#ffffff;
     --muted:#9aa0a6;
-    --wave:#2a3340;         /* remainder bars */
-    --prog:#0a84ff;         /* progress blue */
+    --wave:#2a3340;      /* remainder bars */
+    --prog:#0a84ff;      /* progress blue */
+
+    /* Layout */
     --gutter:12px;
     --wave-h:96px;
   }
@@ -20,44 +25,89 @@
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
     color:var(--text); -webkit-font-smoothing:antialiased; overflow:hidden;
   }
-  .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box}
 
-  /* Waveform (no card, no border) */
-  #wave{
-    width:100%; height:var(--wave-h);
-    background:transparent; border-radius:12px; overflow:hidden;
+  .wrap{
+    width:100%;
+    max-width:700px;
+    margin:0 auto;
+    padding:0 var(--gutter);
+    box-sizing:border-box;
   }
 
-  /* Footer row: time left / play / time right */
+  /* Waveform (no card/border) */
+  #wave{
+    width:100%;
+    height:var(--wave-h);
+    background:transparent;
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  /* Footer row BELOW waveform: time left / play / time right */
   .footerRow{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
     margin-top:10px;
   }
-  .time{font-size:12px; color:var(--muted); letter-spacing:.2px}
-  .controls{display:flex; justify-content:center; align-items:center; flex:1}
-
-  /* Big, clean play button */
-  .playbtn{
-    width:56px; height:56px; border-radius:50%;
-    border:0; background:#ffffff1a; backdrop-filter:blur(6px);
-    display:grid; place-items:center; cursor:pointer;
+  .time{
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.2px;
+    min-width:42px;
   }
-  .playbtn svg{width:22px; height:22px; fill:#ffffff}
+  .controls{
+    display:flex; justify-content:center; align-items:center; flex:1;
+  }
+
+  /* Luxury Play/Pause button */
+  .playbtn{
+    width:64px; height:64px; border-radius:50%;
+    border:1px solid rgba(255,255,255,0.08);
+    background:linear-gradient(145deg,#1b1b1b,#131313);
+    box-shadow:
+      0 4px 12px rgba(0,0,0,0.6),
+      inset 0 1px 2px rgba(255,255,255,0.08),
+      inset 0 -1px 3px rgba(0,0,0,0.8);
+    display:grid; place-items:center; cursor:pointer;
+    transition:all .25s ease;
+  }
+  .playbtn:hover{
+    background:linear-gradient(145deg,#1f1f1f,#101010);
+    transform:scale(1.03);
+    box-shadow:
+      0 6px 18px rgba(0,0,0,0.7),
+      inset 0 1px 2px rgba(255,255,255,0.08),
+      inset 0 -1px 3px rgba(0,0,0,0.8);
+  }
+  .playbtn:active{
+    transform:scale(0.96);
+    box-shadow:
+      0 2px 8px rgba(0,0,0,0.5),
+      inset 0 1px 2px rgba(255,255,255,0.08),
+      inset 0 -1px 3px rgba(0,0,0,0.8);
+  }
+  .playbtn svg{
+    width:24px; height:24px; fill:#ffffff; opacity:.9; transition:opacity .25s ease;
+  }
+  .playbtn:hover svg{ opacity:1; }
 
   @media (max-width:360px){
     :root{ --wave-h:88px }
-    .playbtn{ width:52px; height:52px }
+    .playbtn{ width:58px; height:58px }
+    .playbtn svg{ width:22px; height:22px }
   }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Waveform -->
+    <!-- Waveform only -->
     <div id="wave"></div>
 
-    <!-- Timecodes + play BELOW -->
+    <!-- Timecodes + luxury play BELOW -->
     <div class="footerRow">
-      <div id="tLeft"  class="time">0:00</div>
+      <div id="tLeft" class="time">0:00</div>
       <div class="controls">
         <button id="toggle" class="playbtn" aria-label="Play / Pause" title="Play / Pause">
           <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
@@ -67,22 +117,23 @@
     </div>
   </div>
 
-  <!-- Hidden native audio for iOS background play -->
+  <!-- Hidden native audio (background play on iOS) -->
   <audio id="media" preload="auto" playsinline></audio>
 
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    // Params
+    // ---- Query Params from Glide ----
     const p = new URLSearchParams(location.search);
     const AUDIO_URL = p.get('audio') || './demo.mp3';
 
-    // Media
+    // ---- Media element ----
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
+    // warm the cache for snappier first play
     (async()=>{ try { await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); } catch(_) {} })();
 
-    // WaveSurfer
+    // ---- WaveSurfer (MediaElement backend so iOS keeps playing on lock) ----
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
@@ -96,25 +147,36 @@
       fillParent:true
     });
 
-    // Timecodes
+    // ---- Dual timecodes BELOW waveform ----
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     let dur = 0;
-    ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
-    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // Play/Pause
+    ws.on('ready', ()=>{
+      dur = ws.getDuration() || media.duration || 0;
+      tLeft.textContent  = '0:00';
+      tRight.textContent = fmt(dur);
+    });
+    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+
+    // ---- Luxury Play/Pause ----
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
-    function syncIcon(){ icon.innerHTML = media.paused ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; }
+    function syncIcon(){
+      icon.innerHTML = media.paused
+        ? '<path d="M8 5v14l11-7z"/>'
+        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+    }
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
 
-    // Spacebar for desktop preview
-    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
+    // Spacebar toggle for desktop preview
+    addEventListener('keydown', e => {
+      if (e.code === 'Space') { e.preventDefault(); btn.click(); }
+    });
   </script>
 </body>
 </html>
