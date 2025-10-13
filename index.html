@@ -3,20 +3,49 @@
 <head>
   <!-- CRITICAL: Paint dark + loader at the very first frame -->
   <style>
-    html, body { margin:0; padding:0; background:#171717; color:#FFFFFF; }
+    html, body { 
+      margin:0; 
+      padding:0; 
+      background:#171717; 
+      color:#FFFFFF; 
+    }
+    
     /* Loader renders IMMEDIATELY (before anything else) */
     #loader {
-      position: fixed; inset: 0; background: #171717;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #171717;
       display: flex; align-items: center; justify-content: center;
-      z-index: 9999; transition: opacity 0.4s ease;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
     }
-    .loader-bars { display: flex; gap: 6px; align-items: flex-end; height: 32px; }
-    .loader-bars span { width: 4px; background: #FFFFFF; border-radius: 2px; animation: pulse-bar 1.2s ease-in-out infinite; }
+    
+    /* Pulsing sound bars loader */
+    .loader-bars {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      height: 32px;
+    }
+    .loader-bars span {
+      width: 4px;
+      background: #FFFFFF;
+      border-radius: 2px;
+      animation: pulse-bar 1.2s ease-in-out infinite;
+    }
     .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
     .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
     .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
-    @keyframes pulse-bar { 0%, 100% { transform: scaleY(0.5); opacity: 0.6 } 50% { transform: scaleY(1); opacity: 1 } }
-    #loader.hide { opacity: 0; pointer-events: none; }
+    @keyframes pulse-bar {
+      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+    
+    /* Hide loader when ready */
+    #loader.hide { 
+      opacity: 0; 
+      pointer-events: none;
+    }
   </style>
 
   <meta charset="utf-8" />
@@ -30,7 +59,7 @@
   <!-- Preload local Wavesurfer for faster first paint -->
   <link rel="preload" href="./wavesurfer.min.js" as="script" />
 
-  <!-- Early: preload audio if present -->
+  <!-- Early: if ?audio= is present, start preloading the audio bytes -->
   <script>
     (function () {
       try {
@@ -46,81 +75,138 @@
 
   <style>
     :root{
-      --bg:#171717; --text:#FFFFFF; --muted:#8c8c8c;
-      --wave:#8a8a8a; --prog:#3a3a3a;
-      --gutter:12px; --wave-h:96px;
-      --chip:#232323; --chipText:#EAEAEA; --chipRing:#333;
+      --bg:#171717;
+      --text:#FFFFFF;
+      --muted:#8c8c8c;
+      --wave:#8a8a8a;
+      --prog:#3a3a3a;
+
+      --gutter:12px;
+      --wave-h:96px;
     }
+
     html,body{
       background:var(--bg);
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       -webkit-font-smoothing:antialiased;
-      overflow:hidden; color:var(--text);
+      overflow:hidden;
+      color:var(--text);
     }
+
     .wrap{
-      width:100%; max-width:700px; margin:0 auto; padding:0 var(--gutter);
-      box-sizing:border-box; opacity:0; transition:opacity .4s ease;
+      width:100%;
+      max-width:700px;
+      margin:0 auto;
+      padding:0 var(--gutter);
+      box-sizing:border-box;
+      opacity:0;
+      transition: opacity 0.4s ease;
     }
 
-    /* Waveform */
-    #wave{ width:100%; height:var(--wave-h); background:transparent; border-radius:12px; overflow:hidden; }
-    #wave canvas { background:#171717; display:block; } /* defend iOS white canvas */
+    #wave{
+      width:100%;
+      height:var(--wave-h);
+      background:transparent;
+      border-radius:12px;
+      overflow:hidden;
+    }
+    /* Keep canvas dark on first paint (prevents iOS white canvas flash) */
+    #wave canvas { background-color:#171717; display:block; }
 
-    .footerRow{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; gap:10px; }
-    .time{ font-size:12px; color:var(--muted); letter-spacing:.2px; min-width:42px; }
-    .controls{ flex:1; display:flex; justify-content:center; align-items:center; }
+    .footerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:12px;
+      gap:10px;
+    }
 
-    /* Play button — static white ring, no hover/touch shifts */
+    .time{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.2px;
+      min-width:42px;
+    }
+
+    .controls{
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
     .playbtn{
-      width:64px; height:64px; border-radius:50%;
-      background:var(--bg); border:2px solid #FFFFFF;
-      display:grid; place-items:center; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;
+      width:64px;
+      height:64px;
+      border-radius:50%;
+      background:var(--bg);
+      border:2px solid #FFFFFF;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      outline:none;
+      -webkit-tap-highlight-color: transparent;
     }
-    .playbtn svg{ width:24px; height:24px; fill:#FFFFFF; }
-    .playbtn:focus, .playbtn:hover, .playbtn:active{ border-color:#FFFFFF; background:var(--bg); }
-
-    /* ─────────────────────────────
-       Lyrics chip + panel (collapsed by default)
-       ───────────────────────────── */
-    .lyrics-toggle{
-      margin-top:16px; display:flex; justify-content:center;
+    .playbtn svg{
+      width:24px; height:24px; fill:#FFFFFF;
     }
-    .chip{
-      background:var(--chip); color:var(--chipText); border:1px solid var(--chipRing);
-      padding:8px 12px; border-radius:999px; font-size:12px; letter-spacing:.2px;
-      display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
-    }
-    .chip svg{ width:14px; height:14px; fill:var(--chipText); opacity:.85; }
-
-    .lyrics-panel{
-      max-height:0; overflow:hidden; transition:max-height .28s ease, opacity .18s ease;
-      opacity:0; margin-top:6px;
-    }
-    .lyrics-panel.open{ max-height:240px; opacity:1; }
-
-    .lyrics{
-      margin-top:12px; text-align:center; font-size:14px; line-height:1.6;
-      color:#8c8c8c; padding-bottom:4px; overflow:auto; max-height:220px; scrollbar-width:thin;
-    }
-    .lyrics .line{ opacity:.45; transition:opacity .2s ease, color .2s ease; }
-    .lyrics .line.active{ opacity:1; color:#fff; font-weight:500; }
-
-    /* Optional small caption */
-    .lyrics-caption{
-      color:#7a7a7a; font-size:11px; text-align:center; margin-top:6px;
+    .playbtn:focus, .playbtn:hover, .playbtn:active{
+      border-color:#FFFFFF; background:var(--bg);
     }
 
     @media (max-width:360px){
       :root{ --wave-h:88px; }
-      .playbtn{ width:58px; height:58px; } .playbtn svg{ width:22px; height:22px; }
-      .lyrics-panel.open{ max-height:200px; }
+      .playbtn{ width:58px; height:58px; }
+      .playbtn svg{ width:22px; height:22px; }
     }
+
+    /* ── Apple-style Lyrics disclosure ───────────────────────── */
+    .lyrics-disclosure {
+      margin-top: 14px;
+      display: flex; justify-content: center;
+      color: #b8b8b8; font-size: 12px; letter-spacing:.2px;
+      user-select: none; cursor: pointer;
+    }
+    .lyrics-disclosure .chev {
+      width: 10px; height: 10px; margin-left: 6px;
+      border-right: 1.5px solid #b8b8b8; border-bottom: 1.5px solid #b8b8b8;
+      transform: rotate(-45deg); transform-origin:center;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .lyrics-disclosure.open .chev {
+      transform: rotate(135deg); /* chevron up */
+      border-color: #e5e5e5;
+    }
+
+    .lyrics-panel {
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height .28s ease, opacity .18s ease;
+    }
+    .lyrics-panel.open {
+      max-height: 240px; opacity: 1;
+    }
+
+    .lyrics {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px; line-height: 1.6;
+      color: #8c8c8c;
+      max-height: 220px; overflow: auto; /* internal scroll only */
+      padding-bottom: 4px; scrollbar-width: thin;
+    }
+    .lyrics .line { opacity: .45; transition: opacity .2s ease, color .2s ease; }
+    .lyrics .line.active { opacity: 1; color: #fff; font-weight: 500; }
+
   </style>
 </head>
 <body>
   <!-- Loader with pulsing sound bars -->
   <div id="loader">
-    <div class="loader-bars"><span></span><span></span><span></span></div>
+    <div class="loader-bars">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
   </div>
 
   <div class="wrap">
@@ -136,18 +222,14 @@
       <div id="tRight" class="time">0:00</div>
     </div>
 
-    <!-- Lyrics toggle chip -->
-    <div class="lyrics-toggle">
-      <div class="chip" id="lyricsChip">
-        <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>
-        Lyrics
-      </div>
+    <!-- Subtle Apple-style disclosure label -->
+    <div class="lyrics-disclosure" id="lyricsToggle" role="button" aria-expanded="false">
+      Lyrics <span class="chev"></span>
     </div>
 
-    <!-- Collapsible lyrics panel -->
+    <!-- Collapsible lyrics panel (internal scroll; page doesn’t shift) -->
     <div class="lyrics-panel" id="lyricsPanel">
       <div class="lyrics" id="lyrics"></div>
-      <div class="lyrics-caption">karaoke preview • demo text</div>
     </div>
   </div>
 
@@ -155,7 +237,6 @@
 
   <script src="./wavesurfer.min.js"></script>
   <script>
-    /* ========== Player bootstrap ========== */
     const params    = new URLSearchParams(location.search);
     const AUDIO_URL = params.get('audio') || './demo.mp3';
 
@@ -164,110 +245,111 @@
     media.crossOrigin = 'anonymous';
 
     const ws = WaveSurfer.create({
-      container:'#wave', media, backend:'MediaElement',
+      container:'#wave',
+      media,
+      backend:'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor:'#8a8a8a', progressColor:'#3a3a3a',
-      cursorColor:'rgba(255,255,255,.3)', barWidth:2, barGap:1,
-      normalize:true, responsive:true, dragToSeek:true, fillParent:true
+      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
+      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
+      cursorColor:'rgba(255,255,255,.3)',
+      barWidth:2,
+      barGap:1,
+      normalize:true,
+      responsive:true,
+      dragToSeek:true,
+      fillParent:true
     });
 
-    const fmt = s => (!isFinite(s) ? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
-    const tLeft=document.getElementById('tLeft'), tRight=document.getElementById('tRight');
-    const wrap = document.querySelector('.wrap');
-    ws.on('ready', ()=> {
-      const d = ws.getDuration() || media.duration || 0;
-      tLeft.textContent = '0:00'; tRight.textContent = fmt(d);
+    const fmt = s => (!isFinite(s)
+      ? '0:00'
+      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
+
+    const tLeft  = document.getElementById('tLeft');
+    const tRight = document.getElementById('tRight');
+    const wrap   = document.querySelector('.wrap');
+
+    ws.on('ready', ()=>{
+      const dur = ws.getDuration() || media.duration || 0;
+      tLeft.textContent  = '0:00';
+      tRight.textContent = fmt(dur);
+      // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
       document.getElementById('loader').classList.add('hide');
     });
-    ws.on('audioprocess', ()=> tLeft.textContent = fmt(ws.getCurrentTime()));
-    ws.on('seek',        ()=> tLeft.textContent = fmt(ws.getCurrentTime()));
 
-    /* ========== Controls ========== */
-    const btn = document.getElementById('toggle');
+    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+
+    const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){
       icon.innerHTML = media.paused
         ? '<path d="M8 5v14l11-7z"/>'
         : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
     }
-    btn.onclick = ()=> { ws.playPause(); syncIcon(); };
+    btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
 
-    /* ========== Premium Lyrics UX (toggle + karaoke) ========== */
-
-    // 1) Toggle chip
-    const chip   = document.getElementById('lyricsChip');
-    const panel  = document.getElementById('lyricsPanel');
-    chip.addEventListener('click', ()=> panel.classList.toggle('open'));
-
-    // 2) Fake lyric data (per-line with optional per-word timings)
-    // Each entry can be either:
-    //  { time, text }  → line-level highlight
-    //  { time, words:[ {t, w}, ... ] } → karaoke per-word within that line (t = offset from line time)
-    const lyricsData = [
-      { time: 0,  words: [
-        { t: 0.00, w: "When" }, { t: 0.30, w: "the" }, { t: 0.45, w: "city" }, { t: 0.80, w: "wakes" },
-        { t: 1.20, w: "in" }, { t: 1.35, w: "silver" }, { t: 1.80, w: "light" }
-      ]},
+    /* ------------ Lyrics (subtle, Apple-style) ------------ */
+    const lyricData = [
+      { time: 0,  text: "When the city wakes in silver light" },
       { time: 4,  text: "And echoes fill the streets again" },
       { time: 8,  text: "I chase the rhythm through the night" },
-      { time: 12, words: [
-        { t: 0.00, w: "Until" }, { t: 0.35, w: "the" }, { t: 0.50, w: "noise" }, { t: 0.95, w: "becomes" },
-        { t: 1.40, w: "my" }, { t: 1.55, w: "friend" }
-      ]},
+      { time: 12, text: "Until the noise becomes my friend" },
       { time: 17, text: "Hold me close, the world feels small" },
       { time: 21, text: "Every heartbeat says it all" },
       { time: 26, text: "We could run till morning calls" },
       { time: 30, text: "In this glow we never fall" }
     ];
 
-    // 3) Render lyrics (supports per-word markup for karaoke)
-    const lyricsEl = document.getElementById('lyrics');
-    function renderLyrics(){
-      lyricsEl.innerHTML = lyricsData.map((ln)=> {
-        if (ln.words){
-          const inner = ln.words.map(w => `<span class="w" data-off="${w.t}">${w.w}</span>`).join(' ');
-          return `<div class="line" data-time="${ln.time}" data-mode="words">${inner}</div>`;
-        }
-        return `<div class="line" data-time="${ln.time}" data-mode="line">${ln.text}</div>`;
-      }).join('');
-    }
-    renderLyrics();
-
+    const lyricsEl   = document.getElementById('lyrics');
+    const panelEl    = document.getElementById('lyricsPanel');
+    const toggleEl   = document.getElementById('lyricsToggle');
+    lyricsEl.innerHTML = lyricData.map(l => `<div class="line">${l.text}</div>`).join('');
     const lineEls = Array.from(document.querySelectorAll('.lyrics .line'));
-    function currentLineIndex(cur){
+
+    // Toggle open/close (subtle chevron rotation)
+    toggleEl.addEventListener('click', () => {
+      const open = !panelEl.classList.contains('open');
+      panelEl.classList.toggle('open', open);
+      toggleEl.classList.toggle('open', open);
+      toggleEl.setAttribute('aria-expanded', String(open));
+    });
+
+    // Only scroll when active line changes and only if out of view
+    let lastIdx = -1;
+    function updateLyrics(current){
+      // find last line whose time <= current
       let idx = 0;
-      for (let i=0;i<lyricsData.length;i++) if (cur >= lyricsData[i].time) idx = i;
-      return idx;
-    }
+      for (let i=0;i<lyricData.length;i++){
+        if (current >= lyricData[i].time) idx = i;
+      }
+      if (idx !== lastIdx){
+        lineEls.forEach((el,i)=> el.className = 'line' + (i===idx ? ' active' : ''));
+        lastIdx = idx;
 
-    function tickLyrics(cur){
-      const idx = currentLineIndex(cur);
-      lineEls.forEach((el,i)=> el.className = 'line' + (i===idx ? ' active' : ''));
+        // gentle internal scroll if out of view
+        const active = lineEls[idx];
+        const box    = lyricsEl;
+        if (active){
+          const aTop = active.offsetTop;
+          const aBot = aTop + active.offsetHeight;
+          const vTop = box.scrollTop;
+          const vBot = vTop + box.clientHeight;
 
-      // scroll active near center
-      const active = lineEls[idx];
-      if (active) lyricsEl.scrollTo({ top: active.offsetTop - 60, behavior: 'smooth' });
-
-      // karaoke per-word (only if this line has words)
-      const ln = lyricsData[idx];
-      if (ln && ln.words){
-        const lineStart = ln.time;
-        const rel = Math.max(0, cur - lineStart);
-        const wordSpans = active.querySelectorAll('.w');
-        wordSpans.forEach(span => {
-          const off = parseFloat(span.dataset.off || '0');
-          span.style.opacity = rel >= off ? '1' : '.45';
-        });
+          if (aTop < vTop + 24 || aBot > vBot - 24){
+            // center-ish but don't jitter
+            const target = Math.max(0, aTop - (box.clientHeight/2 - active.offsetHeight/2));
+            box.scrollTo({ top: target, behavior: 'smooth' });
+          }
+        }
       }
     }
 
-    ws.on('audioprocess', ()=> tickLyrics(ws.getCurrentTime()));
-    ws.on('seek',        ()=> tickLyrics(ws.getCurrentTime()));
-
+    ws.on('audioprocess', ()=> updateLyrics(ws.getCurrentTime()));
+    ws.on('seek',        ()=> updateLyrics(ws.getCurrentTime()));
   </script>
 </body>
 </html>
