@@ -6,16 +6,11 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    /* Exact Glide dark */
     --bg:#171717;
-
-    /* UI colors */
     --text:#ffffff;
     --muted:#9aa0a6;
-    --wave:#2a3340;      /* remainder bars */
-    --prog:#0a84ff;      /* progress blue */
-
-    /* Layout */
+    --wave:#2a3340;
+    --prog:#0a84ff;
     --gutter:12px;
     --wave-h:96px;
   }
@@ -34,16 +29,14 @@
     box-sizing:border-box;
   }
 
-  /* Waveform (no card/border) */
   #wave{
     width:100%;
     height:var(--wave-h);
-    background:transparent;   /* let bars sit directly on dark bg */
+    background:transparent;
     border-radius:12px;
     overflow:hidden;
   }
 
-  /* Footer row BELOW waveform: time left / play / time right */
   .footerRow{
     display:flex;
     align-items:center;
@@ -61,18 +54,21 @@
     display:flex; justify-content:center; align-items:center; flex:1;
   }
 
-  /* Matte play/pause button — no halo, no blur, no glow */
+  /* Clean matte play button (no hover/touch changes) */
   .playbtn{
-    width:64px; height:64px; border-radius:50%;
-    border:1px solid rgba(255,255,255,0.06); /* ultra subtle edge */
-    background:#1b1b1b;                      /* flat graphite */
-    display:grid; place-items:center; cursor:pointer;
-    transition:transform .18s ease, background .18s ease, border-color .18s ease;
-    box-shadow:none;                         /* remove glow */
+    width:64px; height:64px;
+    border-radius:50%;
+    background:var(--bg);
+    border:1px solid rgba(255,255,255,0.05);
+    display:grid; place-items:center;
+    cursor:pointer;
+    box-shadow:none;
   }
-  .playbtn:hover{ background:#202020; border-color:rgba(255,255,255,0.08); }
-  .playbtn:active{ transform:scale(0.97); }
-  .playbtn svg{ width:24px; height:24px; fill:#ffffff; }
+  .playbtn svg{
+    width:24px; height:24px;
+    fill:#ffffff;
+    opacity:0.9;
+  }
 
   @media (max-width:360px){
     :root{ --wave-h:88px }
@@ -83,10 +79,7 @@
 </head>
 <body>
   <div class="wrap">
-    <!-- Waveform -->
     <div id="wave"></div>
-
-    <!-- Timecodes + play BELOW -->
     <div class="footerRow">
       <div id="tLeft" class="time">0:00</div>
       <div class="controls">
@@ -98,37 +91,30 @@
     </div>
   </div>
 
-  <!-- Hidden native audio (background play on iOS) -->
   <audio id="media" preload="auto" playsinline></audio>
-
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    // ---- Query Params from Glide ----
     const p = new URLSearchParams(location.search);
     const AUDIO_URL = p.get('audio') || './demo.mp3';
 
-    // ---- Media element ----
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
-    // warm cache for snappier first play
-    (async()=>{ try { await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); } catch(_) {} })();
+    (async()=>{ try{ await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); }catch(_){}})();
 
-    // ---- WaveSurfer (MediaElement backend so iOS keeps playing on lock) ----
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
       backend:'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor: getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor: getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
+      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
+      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
       cursorColor:'rgba(255,255,255,.35)',
       barWidth:2, barGap:1,
       normalize:true, responsive:true, dragToSeek:true,
       fillParent:true
     });
 
-    // ---- Dual timecodes BELOW waveform ----
     const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
@@ -140,9 +126,8 @@
       tRight.textContent = fmt(dur);
     });
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // ---- Play/Pause ----
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){
@@ -151,10 +136,9 @@
         : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
     }
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
-    media.addEventListener('play',  syncIcon);
+    media.addEventListener('play', syncIcon);
     media.addEventListener('pause', syncIcon);
 
-    // Spacebar toggle for desktop preview
     addEventListener('keydown', e => {
       if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
