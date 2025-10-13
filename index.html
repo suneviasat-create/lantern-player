@@ -1,191 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Instant dark paint -->
+  <!-- First byte: paint dark to kill white flash -->
   <style>
-    html, body { margin:0; padding:0; background:#171717; color:#fff; }
+    html, body { margin:0; padding:0; background:#171717; color:#FFFFFF; }
   </style>
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#171717" />
-  <title>Lantern Player — SoundCloud Style</title>
+  <meta name="color-scheme" content="dark only" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Lantern Player</title>
+
+  <!-- Preload audio bytes if ?audio= is present -->
+  <script>
+    (function () {
+      try {
+        const u = new URLSearchParams(location.search).get('audio');
+        if (u) {
+          const l = document.createElement('link');
+          l.rel = 'preload'; l.as = 'audio'; l.href = u; l.crossOrigin = 'anonymous';
+          document.head.appendChild(l);
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <style>
     :root{
       --bg:#171717;
       --text:#FFFFFF;
       --muted:#8c8c8c;
+      --wave:#8a8a8a;   /* unplayed (mid-gray) */
+      --prog:#3a3a3a;   /* played (darker) */
+      --gutter:12px;
+      --wave-h:96px;
     }
-
     html,body{
       background:var(--bg);
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      color:var(--text);
-      overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+      overflow:hidden; color:var(--text);
     }
-
-    .wrap{
-      width:100%;
-      max-width:700px;
-      margin:0 auto;
-      padding:20px 12px;
-      box-sizing:border-box;
-    }
-
-    /* SoundCloud waveform container */
-    #waveform {
-      position: relative;
-      cursor: pointer;
-      height: 96px;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    /* Hover overlay (same as SoundCloud demo) */
-    #hover {
-      position: absolute;
-      left: 0;
-      top: 0;
-      z-index: 10;
-      pointer-events: none;
-      height: 100%;
-      width: 0;
-      mix-blend-mode: overlay;
-      background: rgba(255, 255, 255, 0.2);
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    #waveform:hover #hover { opacity: 1; }
-
-    /* Time labels */
-    #time, #duration {
-      position: absolute;
-      z-index: 11;
-      bottom: -20px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    #time { left: 0; }
-    #duration { right: 0; }
-
-    /* Center play button (same Lantern style) */
-    .controls{
-      margin-top: 24px;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-    }
+    .wrap{ width:100%; max-width:700px; margin:0 auto; padding:0 var(--gutter); box-sizing:border-box; }
+    #wave{ width:100%; height:var(--wave-h); background:transparent; border-radius:12px; overflow:hidden; }
+    #wave canvas{ background:#171717; display:block; } /* defend against white canvas */
+    .footerRow{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; gap:10px; }
+    .time{ font-size:12px; color:var(--muted); letter-spacing:.2px; min-width:42px; }
+    .controls{ flex:1; display:flex; justify-content:center; align-items:center; }
     .playbtn{
-      width:64px;
-      height:64px;
-      border-radius:50%;
-      border:2px solid #fff;
-      background:var(--bg);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
+      width:64px; height:64px; border-radius:50%;
+      background:var(--bg); border:2px solid #FFFFFF;
+      display:grid; place-items:center; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;
     }
-    .playbtn svg{ width:24px; height:24px; fill:#fff; }
-
+    .playbtn svg{ width:24px; height:24px; fill:#FFFFFF; }
+    .playbtn:focus,.playbtn:hover,.playbtn:active{ border-color:#FFFFFF; background:var(--bg); }
     @media (max-width:360px){
-      #waveform{height:88px;}
-      .playbtn{width:58px;height:58px;}
-      .playbtn svg{width:22px;height:22px;}
+      :root{ --wave-h:88px; }
+      .playbtn{ width:58px; height:58px; }
+      .playbtn svg{ width:22px; height:22px; }
     }
   </style>
 </head>
-
 <body>
   <div class="wrap">
-    <div id="waveform">
-      <div id="time">0:00</div>
-      <div id="duration">0:00</div>
-      <div id="hover"></div>
-    </div>
-
-    <div class="controls">
-      <button id="toggle" class="playbtn" aria-label="Play / Pause">
-        <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
-      </button>
+    <div id="wave"></div>
+    <div class="footerRow">
+      <div id="tLeft" class="time">0:00</div>
+      <div class="controls">
+        <button id="toggle" class="playbtn" aria-label="Play / Pause">
+          <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+      <div id="tRight" class="time">0:00</div>
     </div>
   </div>
 
+  <!-- Hidden audio (warm immediately) -->
   <audio id="media" preload="auto" playsinline></audio>
 
-  <!-- CDN version (includes barAlign + gradients) -->
-  <script src="https://unpkg.com/wavesurfer.js@7.11.0/dist/wavesurfer.min.js"></script>
+  <!-- INLINE Wavesurfer (paste the entire minified v7 file here) -->
+  <script>
+  /* wavesurfer.min.js v7.x — paste the full contents here */
+  </script>
 
   <script>
-    const params = new URLSearchParams(location.search);
+    // Fast init
+    const params    = new URLSearchParams(location.search);
     const AUDIO_URL = params.get('audio') || './demo.mp3';
+
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
 
-    // Create offscreen canvas for gradient definitions
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    const makeGradient = (top, mid, white, bottom) => {
-      const g = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.35);
-      g.addColorStop(0, top);
-      g.addColorStop(0.7, mid);
-      g.addColorStop(0.705, white);
-      g.addColorStop(0.71, white);
-      g.addColorStop(0.715, bottom);
-      g.addColorStop(1, bottom);
-      return g;
-    };
-
-    const waveGradient = makeGradient('#555','#666','#999','#777');
-    const progGradient = makeGradient('#3a3a3a','#2f2f2f','#fff','#2a2a2a');
-
-    const wavesurfer = WaveSurfer.create({
-      container: '#waveform',
+    const ws = WaveSurfer.create({
+      container:'#wave',
       media,
-      backend: 'MediaElement',
-      height: 96,
-      waveColor: waveGradient,
-      progressColor: progGradient,
-      cursorColor: 'rgba(255,255,255,.3)',
-      barWidth: 2,
-      barGap: 1,
-      barRadius: 2,
-      barAlign: 'center',
-      normalize: true,
-      responsive: true,
-      dragToSeek: true,
-      fillParent: true,
+      backend:'MediaElement',
+      height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
+      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
+      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
+      cursorColor:'rgba(255,255,255,.3)',
+      barWidth:2, barGap:1,
+      normalize:true, responsive:true, dragToSeek:true,
+      fillParent:true
     });
 
-    // Hover width follow pointer
-    const hover = document.querySelector('#hover');
-    const waveform = document.querySelector('#waveform');
-    waveform.addEventListener('pointermove', e => hover.style.width = `${e.offsetX}px`);
+    const fmt = s => (!isFinite(s)
+      ? '0:00'
+      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
 
-    // Time updates
-    const formatTime = s => {
-      const m = Math.floor(s/60);
-      const sec = Math.round(s)%60;
-      return `${m}:${String(sec).padStart(2,'0')}`;
-    };
-    const timeEl = document.querySelector('#time');
-    const durEl = document.querySelector('#duration');
-    wavesurfer.on('decode', d => durEl.textContent = formatTime(d));
-    wavesurfer.on('timeupdate', c => timeEl.textContent = formatTime(c));
+    const tLeft  = document.getElementById('tLeft');
+    const tRight = document.getElementById('tRight');
 
-    // Play/pause logic
-    const btn = document.getElementById('toggle');
+    ws.on('ready', ()=>{
+      const dur = ws.getDuration() || media.duration || 0;
+      tLeft.textContent  = '0:00';
+      tRight.textContent = fmt(dur);
+    });
+    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+
+    const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
-    const syncIcon = () => {
+    function syncIcon(){
       icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
-    };
-    btn.onclick = ()=>{ wavesurfer.playPause(); syncIcon(); };
-    media.addEventListener('play', syncIcon);
+        ? '<path d="M8 5v14l11-7z"/>'        // play
+        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; // pause
+    }
+    btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
+    media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
+
+    // Spacebar (desktop)
+    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
   </script>
 </body>
 </html>
