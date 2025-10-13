@@ -7,10 +7,10 @@
 <style>
   :root{
     --bg:#171717;      /* exact dark background */
-    --text:#FFFFFF;    /* pure white */
-    --muted:#8c8c8c;   /* for timestamps */
-    --wave:#2b2b2b;    /* waveform base */
-    --prog:#FFFFFF;    /* progress bar pure white */
+    --text:#FFFFFF;    /* white for play icon + time */
+    --muted:#8c8c8c;   /* time label */
+    --wave:#8a8a8a;    /* unplayed waveform (mid-gray) */
+    --prog:#3a3a3a;    /* played part darker for Disco-like style */
 
     --gutter:12px;
     --wave-h:96px;
@@ -32,7 +32,6 @@
     box-sizing:border-box;
   }
 
-  /* Waveform — perfectly clean */
   #wave{
     width:100%;
     height:var(--wave-h);
@@ -41,7 +40,6 @@
     overflow:hidden;
   }
 
-  /* Time + button row */
   .footerRow{
     display:flex;
     align-items:center;
@@ -63,13 +61,12 @@
     align-items:center;
   }
 
-  /* Play button — solid white border, static, minimalist */
   .playbtn{
     width:64px;
     height:64px;
     border-radius:50%;
-    background:var(--bg);     /* blend into background */
-    border:2px solid #FFFFFF; /* solid white ring */
+    background:var(--bg);
+    border:2px solid #FFFFFF;
     display:grid;
     place-items:center;
     cursor:pointer;
@@ -78,12 +75,12 @@
   .playbtn svg{
     width:24px;
     height:24px;
-    fill:#FFFFFF;             /* solid white icon */
+    fill:#FFFFFF;
   }
   .playbtn:focus,
   .playbtn:hover,
   .playbtn:active{
-    border:2px solid #FFFFFF; /* no touch change */
+    border:2px solid #FFFFFF;
     background:var(--bg);
   }
 
@@ -126,7 +123,7 @@
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
       waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
       progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.4)',
+      cursorColor:'rgba(255,255,255,.3)',
       barWidth:2,
       barGap:1,
       normalize:true,
@@ -153,8 +150,8 @@
     const icon = document.getElementById('icon');
     function syncIcon(){
       icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'        // play
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; // pause
+        ? '<path d="M8 5v14l11-7z"/>'
+        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
     }
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play', syncIcon);
