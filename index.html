@@ -6,16 +6,11 @@
 <title>Lantern Player</title>
 <style>
   :root{
-    /* inherit Glide’s background — keep everything transparent */
-    --bg: transparent;
-
-    /* typography & colors */
+    --bg:#171717;           /* exact Glide dark background */
     --text:#ffffff;
     --muted:#9aa0a6;
-    --wave:#2a3340;     /* remainder bars (dark gray-blue) */
-    --prog:#0a84ff;     /* progress blue */
-
-    /* layout */
+    --wave:#2a3340;         /* remainder bars */
+    --prog:#0a84ff;         /* progress blue */
     --gutter:12px;
     --wave-h:96px;
   }
@@ -27,30 +22,27 @@
   }
   .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box}
 
-  /* Waveform only (no panel, no border) */
+  /* Waveform (no card, no border) */
   #wave{
-    width:100%;
-    height:var(--wave-h);
-    background:transparent;     /* no card */
-    border-radius:12px;          /* you can set 0 if you want squared ends */
-    overflow:hidden;
+    width:100%; height:var(--wave-h);
+    background:transparent; border-radius:12px; overflow:hidden;
   }
 
-  /* Footer row BELOW waveform: time left / play / time right */
+  /* Footer row: time left / play / time right */
   .footerRow{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
     margin-top:10px;
   }
-  .time{font-size:12px;color:var(--muted);letter-spacing:.2px}
-  .controls{display:flex;justify-content:center;align-items:center;flex:1}
+  .time{font-size:12px; color:var(--muted); letter-spacing:.2px}
+  .controls{display:flex; justify-content:center; align-items:center; flex:1}
 
-  /* Big play/pause button (clean circle), no extra rings around the player */
+  /* Big, clean play button */
   .playbtn{
-    width:56px;height:56px;border-radius:50%;
+    width:56px; height:56px; border-radius:50%;
     border:0; background:#ffffff1a; backdrop-filter:blur(6px);
     display:grid; place-items:center; cursor:pointer;
   }
-  .playbtn svg{width:22px;height:22px;fill:#ffffff}
+  .playbtn svg{width:22px; height:22px; fill:#ffffff}
 
   @media (max-width:360px){
     :root{ --wave-h:88px }
@@ -80,18 +72,17 @@
 
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <script>
-    // Params from Glide
+    // Params
     const p = new URLSearchParams(location.search);
     const AUDIO_URL = p.get('audio') || './demo.mp3';
 
-    // Media element
+    // Media
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
-    // Warm the cache for snappier first play
     (async()=>{ try { await fetch(AUDIO_URL,{cache:'force-cache'}); media.load(); } catch(_) {} })();
 
-    // WaveSurfer (MediaElement backend = keeps playing on screen lock)
+    // WaveSurfer
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
@@ -110,7 +101,6 @@
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     let dur = 0;
-
     ws.on('ready', ()=>{ dur = ws.getDuration() || media.duration || 0; tLeft.textContent = '0:00'; tRight.textContent = fmt(dur); });
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('seek', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
