@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- First byte: paint dark to kill white flash -->
+  <!-- Immediate dark paint: prevents white flash on iOS -->
   <style>
     html, body { margin:0; padding:0; background:#171717; color:#FFFFFF; }
   </style>
@@ -14,17 +14,21 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Lantern Player</title>
 
-  <!-- Preload audio bytes if ?audio= is present -->
+  <!-- Preload audio + local script early -->
+  <link rel="preload" href="./wavesurfer.min.js" as="script" />
   <script>
-    (function () {
+    (function preloadAudio() {
       try {
         const u = new URLSearchParams(location.search).get('audio');
         if (u) {
           const l = document.createElement('link');
-          l.rel = 'preload'; l.as = 'audio'; l.href = u; l.crossOrigin = 'anonymous';
+          l.rel = 'preload';
+          l.as = 'audio';
+          l.href = u;
+          l.crossOrigin = 'anonymous';
           document.head.appendChild(l);
         }
-      } catch (e) {}
+      } catch {}
     })();
   </script>
 
@@ -33,30 +37,77 @@
       --bg:#171717;
       --text:#FFFFFF;
       --muted:#8c8c8c;
-      --wave:#8a8a8a;   /* unplayed (mid-gray) */
-      --prog:#3a3a3a;   /* played (darker) */
+      --wave:#8a8a8a;
+      --prog:#3a3a3a;
       --gutter:12px;
       --wave-h:96px;
     }
+
     html,body{
       background:var(--bg);
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       -webkit-font-smoothing:antialiased;
-      overflow:hidden; color:var(--text);
+      overflow:hidden;
+      color:var(--text);
+      touch-action:manipulation;
     }
-    .wrap{ width:100%; max-width:700px; margin:0 auto; padding:0 var(--gutter); box-sizing:border-box; }
-    #wave{ width:100%; height:var(--wave-h); background:transparent; border-radius:12px; overflow:hidden; }
-    #wave canvas{ background:#171717; display:block; } /* defend against white canvas */
-    .footerRow{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; gap:10px; }
-    .time{ font-size:12px; color:var(--muted); letter-spacing:.2px; min-width:42px; }
-    .controls{ flex:1; display:flex; justify-content:center; align-items:center; }
+
+    .wrap{
+      width:100%;
+      max-width:700px;
+      margin:0 auto;
+      padding:0 var(--gutter);
+      box-sizing:border-box;
+    }
+
+    /* Waveform */
+    #wave{
+      width:100%;
+      height:var(--wave-h);
+      border-radius:12px;
+      overflow:hidden;
+      background:#171717; /* dark immediately on first frame */
+    }
+    #wave canvas { background:#171717; display:block; }
+
+    /* Footer row */
+    .footerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:12px;
+      gap:10px;
+    }
+
+    .time{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.2px;
+      min-width:42px;
+    }
+
+    .controls{
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    /* Play button */
     .playbtn{
-      width:64px; height:64px; border-radius:50%;
-      background:var(--bg); border:2px solid #FFFFFF;
-      display:grid; place-items:center; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;
+      width:64px;
+      height:64px;
+      border-radius:50%;
+      border:2px solid #FFFFFF;
+      background:var(--bg);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      outline:none;
+      -webkit-tap-highlight-color: transparent;
     }
     .playbtn svg{ width:24px; height:24px; fill:#FFFFFF; }
-    .playbtn:focus,.playbtn:hover,.playbtn:active{ border-color:#FFFFFF; background:var(--bg); }
+
     @media (max-width:360px){
       :root{ --wave-h:88px; }
       .playbtn{ width:58px; height:58px; }
@@ -64,6 +115,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div id="wave"></div>
@@ -78,19 +130,12 @@
     </div>
   </div>
 
-  <!-- Hidden audio (warm immediately) -->
   <audio id="media" preload="auto" playsinline></audio>
-
-  <!-- INLINE Wavesurfer (paste the entire minified v7 file here) -->
-  <script>
-  /* wavesurfer.min.js v7.x — paste the full contents here */
-  </script>
+  <script src="./wavesurfer.min.js"></script>
 
   <script>
-    // Fast init
-    const params    = new URLSearchParams(location.search);
-    const AUDIO_URL = params.get('audio') || './demo.mp3';
-
+    // Fast-start script (runs immediately)
+    const AUDIO_URL = new URLSearchParams(location.search).get('audio') || './demo.mp3';
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
@@ -99,43 +144,37 @@
       container:'#wave',
       media,
       backend:'MediaElement',
-      height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
+      height:96,
+      waveColor:'#8a8a8a',
+      progressColor:'#3a3a3a',
       cursorColor:'rgba(255,255,255,.3)',
-      barWidth:2, barGap:1,
-      normalize:true, responsive:true, dragToSeek:true,
+      barWidth:2,
+      barGap:1,
+      normalize:true,
+      responsive:true,
+      dragToSeek:true,
       fillParent:true
     });
 
-    const fmt = s => (!isFinite(s)
-      ? '0:00'
-      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
+    const fmt = s => (!isFinite(s) ? '0:00' :
+      `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
 
-    const tLeft  = document.getElementById('tLeft');
-    const tRight = document.getElementById('tRight');
+    const tLeft=document.getElementById('tLeft'),tRight=document.getElementById('tRight');
+    ws.on('ready',()=>{const d=ws.getDuration()||media.duration||0;tLeft.textContent='0:00';tRight.textContent=fmt(d);});
+    ws.on('audioprocess',()=>tLeft.textContent=fmt(ws.getCurrentTime()));
+    ws.on('seek',()=>tLeft.textContent=fmt(ws.getCurrentTime()));
 
-    ws.on('ready', ()=>{
-      const dur = ws.getDuration() || media.duration || 0;
-      tLeft.textContent  = '0:00';
-      tRight.textContent = fmt(dur);
+    const btn=document.getElementById('toggle'),icon=document.getElementById('icon');
+    function syncIcon(){icon.innerHTML=media.paused
+      ?'<path d="M8 5v14l11-7z"/>'
+      :'<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; }
+    btn.onclick=()=>{ws.playPause();syncIcon();};
+    media.addEventListener('play',syncIcon);
+    media.addEventListener('pause',syncIcon);
+
+    addEventListener('keydown',e=>{
+      if(e.code==='Space'){e.preventDefault();btn.click();}
     });
-    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-
-    const btn  = document.getElementById('toggle');
-    const icon = document.getElementById('icon');
-    function syncIcon(){
-      icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'        // play
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; // pause
-    }
-    btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
-    media.addEventListener('play',  syncIcon);
-    media.addEventListener('pause', syncIcon);
-
-    // Spacebar (desktop)
-    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
   </script>
 </body>
 </html>
