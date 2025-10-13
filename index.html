@@ -3,54 +3,19 @@
 <head>
   <!-- CRITICAL: Paint dark + loader at the very first frame -->
   <style>
-    html, body { 
-      margin:0; 
-      padding:0; 
-      background:#171717; 
-      color:#FFFFFF; 
-    }
-    
-    /* Loader renders IMMEDIATELY (before anything else) */
+    html, body {margin:0;padding:0;background:#171717;color:#FFFFFF;}
     #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #171717;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: opacity 0.4s ease;
+      position: fixed; inset: 0; background: #171717;
+      display:flex;align-items:center;justify-content:center;
+      z-index:9999;transition:opacity .4s ease;
     }
-    
-    /* Pulsing sound bars loader */
-    .loader-bars {
-      display: flex;
-      gap: 6px;
-      align-items: flex-end;
-      height: 32px;
-    }
-    .loader-bars span {
-      width: 4px;
-      background: #FFFFFF;
-      border-radius: 2px;
-      animation: pulse-bar 1.2s ease-in-out infinite;
-    }
-    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
-    @keyframes pulse-bar {
-      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
-      50% { transform: scaleY(1); opacity: 1; }
-    }
-    
-    /* Hide loader when ready */
-    #loader.hide { 
-      opacity: 0; 
-      pointer-events: none;
-    }
+    .loader-bars{display:flex;gap:6px;align-items:flex-end;height:32px;}
+    .loader-bars span{width:4px;background:#fff;border-radius:2px;animation:pulse-bar 1.2s ease-in-out infinite;}
+    .loader-bars span:nth-child(1){animation-delay:0s;height:16px;}
+    .loader-bars span:nth-child(2){animation-delay:.2s;height:24px;}
+    .loader-bars span:nth-child(3){animation-delay:.4s;height:20px;}
+    @keyframes pulse-bar{0%,100%{transform:scaleY(.5);opacity:.6}50%{transform:scaleY(1);opacity:1}}
+    #loader.hide{opacity:0;pointer-events:none;}
   </style>
 
   <meta charset="utf-8" />
@@ -61,123 +26,56 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Lantern Player</title>
 
-  <!-- Preload local Wavesurfer for faster first paint -->
   <link rel="preload" href="./wavesurfer.min.js" as="script" />
-
-  <!-- Early: if ?audio= is present, start preloading the audio bytes -->
   <script>
-    (function () {
-      try {
-        const u = new URLSearchParams(location.search).get('audio');
-        if (u) {
-          const l = document.createElement('link');
-          l.rel = 'preload'; l.as = 'audio'; l.href = u; l.crossOrigin = 'anonymous';
-          document.head.appendChild(l);
-        }
-      } catch (e) {}
-    })();
+    (function(){try{
+      const u=new URLSearchParams(location.search).get('audio');
+      if(u){const l=document.createElement('link');l.rel='preload';l.as='audio';l.href=u;l.crossOrigin='anonymous';document.head.appendChild(l);}
+    }catch(e){}})();
   </script>
 
   <style>
     :root{
-      --bg:#171717;
-      --text:#FFFFFF;
-      --muted:#8c8c8c;
-      --wave:#8a8a8a;
-      --prog:#3a3a3a;
-
-      --gutter:12px;
-      --wave-h:96px;
+      --bg:#171717;--text:#FFFFFF;--muted:#8c8c8c;
+      --wave:#8a8a8a;--prog:#3a3a3a;
+      --gutter:12px;--wave-h:96px;
     }
-
     html,body{
-      background:var(--bg);
-      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      -webkit-font-smoothing:antialiased;
-      overflow:hidden;
-      color:var(--text);
+      background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      -webkit-font-smoothing:antialiased;overflow:hidden;color:var(--text);
     }
-
-    .wrap{
-      width:100%;
-      max-width:700px;
-      margin:0 auto;
-      padding:0 var(--gutter);
-      box-sizing:border-box;
-      opacity:0;
-      transition: opacity 0.4s ease;
-    }
-
-    #wave{
-      width:100%;
-      height:var(--wave-h);
-      background:transparent;
-      border-radius:12px;
-      overflow:hidden;
-    }
-    #wave canvas { background-color:#171717; display:block; }
-
-    .footerRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:12px;
-      gap:10px;
-    }
-
-    .time{
-      font-size:12px;
-      color:var(--muted);
-      letter-spacing:.2px;
-      min-width:42px;
-    }
-
-    .controls{
-      flex:1;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-    }
-
-    .playbtn{
-      width:64px;
-      height:64px;
-      border-radius:50%;
-      background:var(--bg);
-      border:2px solid #FFFFFF;
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      outline:none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .playbtn svg{
-      width:24px; height:24px; fill:#FFFFFF;
-    }
-    .playbtn:focus, .playbtn:hover, .playbtn:active{
-      border-color:#FFFFFF; background:var(--bg);
-    }
-
+    .wrap{width:100%;max-width:700px;margin:0 auto;padding:0 var(--gutter);box-sizing:border-box;opacity:0;transition:opacity .4s ease;}
+    #wave{width:100%;height:var(--wave-h);background:transparent;border-radius:12px;overflow:hidden;}
+    #wave canvas{background-color:#171717;display:block;}
+    .footerRow{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:10px;}
+    .time{font-size:12px;color:var(--muted);letter-spacing:.2px;min-width:42px;}
+    .controls{flex:1;display:flex;justify-content:center;align-items:center;}
+    .playbtn{width:64px;height:64px;border-radius:50%;background:var(--bg);border:2px solid #FFFFFF;display:grid;place-items:center;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;}
+    .playbtn svg{width:24px;height:24px;fill:#FFFFFF;}
+    .playbtn:focus,.playbtn:hover,.playbtn:active{border-color:#FFFFFF;background:var(--bg);}
     @media (max-width:360px){
-      :root{ --wave-h:88px; }
-      .playbtn{ width:58px; height:58px; }
-      .playbtn svg{ width:22px; height:22px; }
+      :root{--wave-h:88px;}
+      .playbtn{width:58px;height:58px;}
+      .playbtn svg{width:22px;height:22px;}
     }
+
+    /* Lyrics block */
+    .lyrics{
+      margin-top:24px;text-align:center;line-height:1.6;font-size:14px;
+      color:#8c8c8c;min-height:90px;transition:color .2s ease;
+    }
+    .lyrics .line{opacity:.4;transition:opacity .3s ease,color .3s ease;}
+    .lyrics .active{opacity:1;color:#fff;font-weight:500;}
   </style>
 </head>
 <body>
-  <!-- Loader with pulsing sound bars -->
+  <!-- Loader -->
   <div id="loader">
-    <div class="loader-bars">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
+    <div class="loader-bars"><span></span><span></span><span></span></div>
   </div>
 
   <div class="wrap">
     <div id="wave"></div>
-
     <div class="footerRow">
       <div id="tLeft" class="time">0:00</div>
       <div class="controls">
@@ -187,70 +85,86 @@
       </div>
       <div id="tRight" class="time">0:00</div>
     </div>
+
+    <!-- Fake lyrics -->
+    <div class="lyrics" id="lyrics"></div>
   </div>
 
   <audio id="media" preload="auto" playsinline></audio>
-
   <script src="./wavesurfer.min.js"></script>
   <script>
-    const params    = new URLSearchParams(location.search);
-    const AUDIO_URL = params.get('audio') || './demo.mp3';
+    const params=new URLSearchParams(location.search);
+    const AUDIO_URL=params.get('audio')||'./demo.mp3';
+    const media=document.getElementById('media');
+    media.src=AUDIO_URL;media.crossOrigin='anonymous';
 
-    const media = document.getElementById('media');
-    media.src = AUDIO_URL;
-    media.crossOrigin = 'anonymous';
-
-    const ws = WaveSurfer.create({
-      container:'#wave',
-      media,
-      backend:'MediaElement',
-      height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.3)',
-      barWidth:2,
-      barGap:1,
-      normalize:true,
-      responsive:true,
-      dragToSeek:true,
-      fillParent:true
+    const ws=WaveSurfer.create({
+      container:'#wave',media,backend:'MediaElement',
+      height:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
+      waveColor:'#8a8a8a',progressColor:'#3a3a3a',
+      cursorColor:'rgba(255,255,255,.3)',barWidth:2,barGap:1,
+      normalize:true,responsive:true,dragToSeek:true,fillParent:true
     });
 
-    const fmt = s => (!isFinite(s)
-      ? '0:00'
-      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
+    const fmt=s=>!isFinite(s)?'0:00':`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+    const tLeft=document.getElementById('tLeft');
+    const tRight=document.getElementById('tRight');
+    const wrap=document.querySelector('.wrap');
 
-    const tLeft  = document.getElementById('tLeft');
-    const tRight = document.getElementById('tRight');
-    const wrap = document.querySelector('.wrap');
-    let dur = 0;
+    // --- FAKE LYRICS ---
+    const lyricData=[
+      {time:0, text:"When the city wakes in silver light"},
+      {time:4, text:"And echoes fill the streets again"},
+      {time:8, text:"I chase the rhythm through the night"},
+      {time:12, text:"Until the noise becomes my friend"},
+      {time:17, text:"Hold me close, the world feels small"},
+      {time:21, text:"Every heartbeat says it all"},
+      {time:26, text:"We could run till morning calls"},
+      {time:30, text:"In this glow we never fall"},
+    ];
 
-    ws.on('ready', ()=>{
-      dur = ws.getDuration() || media.duration || 0;
-      tLeft.textContent  = '0:00';
-      tRight.textContent = fmt(dur);
-      
-      // Smooth simultaneous crossfade (loader out, player in)
-      wrap.style.opacity = '1';
+    const lyricsEl=document.getElementById('lyrics');
+    lyricsEl.innerHTML=lyricData.map(l=>`<div class="line">${l.text}</div>`).join('');
+
+    ws.on('ready',()=>{
+      const dur=ws.getDuration()||media.duration||0;
+      tLeft.textContent='0:00';tRight.textContent=fmt(dur);
+      wrap.style.opacity='1';
       document.getElementById('loader').classList.add('hide');
     });
 
-    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    // --- Highlight rolling lyric ---
+    const lines=[...document.querySelectorAll('.lyrics .line')];
+    ws.on('audioprocess',()=>updateLyrics(ws.getCurrentTime()));
+    ws.on('seek',()=>updateLyrics(ws.getCurrentTime()));
 
-    const btn  = document.getElementById('toggle');
-    const icon = document.getElementById('icon');
-    function syncIcon(){
-      icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+    function updateLyrics(current){
+      let idx=0;
+      for(let i=0;i<lyricData.length;i++){
+        if(current>=lyricData[i].time) idx=i;
+      }
+      lines.forEach((el,i)=>el.className='line'+(i===idx?' active':''));
+      // auto-scroll effect (center active line)
+      const active=lines[idx];
+      if(active){
+        lyricsEl.scrollTo({top:active.offsetTop-40,behavior:'smooth'});
+      }
+      tLeft.textContent=fmt(current);
     }
-    btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
-    media.addEventListener('play',  syncIcon);
-    media.addEventListener('pause', syncIcon);
 
-    addEventListener('keydown', e => {
-      if (e.code === 'Space') { e.preventDefault(); btn.click(); }
+    // --- Player controls ---
+    const btn=document.getElementById('toggle');
+    const icon=document.getElementById('icon');
+    function syncIcon(){
+      icon.innerHTML=media.paused
+        ?'<path d="M8 5v14l11-7z"/>'
+        :'<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+    }
+    btn.onclick=()=>{ws.playPause();syncIcon();};
+    media.addEventListener('play',syncIcon);
+    media.addEventListener('pause',syncIcon);
+    addEventListener('keydown',e=>{
+      if(e.code==='Space'){e.preventDefault();btn.click();}
     });
   </script>
 </body>
