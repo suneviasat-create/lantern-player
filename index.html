@@ -1,9 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Paint dark at the very first frame (kills white flash) -->
+  <!-- CRITICAL: Paint dark + loader at the very first frame -->
   <style>
-    html, body { margin:0; padding:0; background:#171717; color:#FFFFFF; }
+    html, body { 
+      margin:0; 
+      padding:0; 
+      background:#171717; 
+      color:#FFFFFF; 
+    }
+    
+    /* Loader renders IMMEDIATELY (before anything else) */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #171717;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    /* Cooler loader - spinning ring */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #3a3a3a;
+      border-top-color: #FFFFFF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Hide loader when ready */
+    #loader.hide { 
+      opacity: 0; 
+      pointer-events: none; 
+      transition: opacity 0.3s ease;
+    }
   </style>
 
   <meta charset="utf-8" />
@@ -33,11 +72,11 @@
 
   <style>
     :root{
-      --bg:#171717;      /* exact dark background */
-      --text:#FFFFFF;    /* white for play icon + time */
-      --muted:#8c8c8c;   /* time label */
-      --wave:#8a8a8a;    /* unplayed waveform (mid-gray) */
-      --prog:#3a3a3a;    /* played part darker (Disco-like) */
+      --bg:#171717;
+      --text:#FFFFFF;
+      --muted:#8c8c8c;
+      --wave:#8a8a8a;
+      --prog:#3a3a3a;
 
       --gutter:12px;
       --wave-h:96px;
@@ -59,7 +98,6 @@
       box-sizing:border-box;
     }
 
-    /* Waveform */
     #wave{
       width:100%;
       height:var(--wave-h);
@@ -67,10 +105,8 @@
       border-radius:12px;
       overflow:hidden;
     }
-    /* Keep canvas dark on first paint (prevents iOS white canvas flash) */
     #wave canvas { background-color:#171717; display:block; }
 
-    /* Footer row */
     .footerRow{
       display:flex;
       align-items:center;
@@ -93,7 +129,6 @@
       align-items:center;
     }
 
-    /* Play button — solid white ring & icon, static */
     .playbtn{
       width:64px;
       height:64px;
@@ -118,45 +153,12 @@
       .playbtn{ width:58px; height:58px; }
       .playbtn svg{ width:22px; height:22px; }
     }
-
-    /* Loading overlay - shows instantly, hides when ready */
-    #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #171717;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      opacity: 1;
-      transition: opacity 0.3s ease;
-    }
-    #loader.hide { 
-      opacity: 0; 
-      pointer-events: none; 
-    }
-    
-    /* Subtle pulse dot */
-    .pulse {
-      width: 12px;
-      height: 12px;
-      background: #8c8c8c;
-      border-radius: 50%;
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.1); }
-    }
   </style>
 </head>
 <body>
-  <!-- Loading overlay with pulse -->
+  <!-- Loader renders FIRST (instant dark screen) -->
   <div id="loader">
-    <div class="pulse"></div>
+    <div class="spinner"></div>
   </div>
 
   <div class="wrap">
@@ -173,22 +175,17 @@
     </div>
   </div>
 
-  <!-- Hidden audio (created immediately so iOS can warm it) -->
   <audio id="media" preload="auto" playsinline></audio>
 
-  <!-- LOCAL Wavesurfer (put wavesurfer.min.js in the repo root) -->
   <script src="./wavesurfer.min.js"></script>
   <script>
-    // Fast init (no window.load)
     const params    = new URLSearchParams(location.search);
     const AUDIO_URL = params.get('audio') || './demo.mp3';
 
-    // Prepare audio immediately
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
     media.crossOrigin = 'anonymous';
 
-    // Wavesurfer
     const ws = WaveSurfer.create({
       container:'#wave',
       media,
@@ -205,7 +202,6 @@
       fillParent:true
     });
 
-    // Timecodes
     const fmt = s => (!isFinite(s)
       ? '0:00'
       : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
@@ -219,7 +215,6 @@
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
       
-      // Hide loader when waveform is painted
       setTimeout(() => {
         document.getElementById('loader').classList.add('hide');
       }, 100);
@@ -228,19 +223,17 @@
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // Play/Pause
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){
       icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'        // play
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'; // pause
+        ? '<path d="M8 5v14l11-7z"/>'
+        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
     }
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
 
-    // Spacebar toggle (desktop)
     addEventListener('keydown', e => {
       if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
