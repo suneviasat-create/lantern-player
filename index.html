@@ -105,7 +105,7 @@
       padding:0 var(--gutter);
       box-sizing:border-box;
       opacity:0;
-      transform: scale(0.94);
+      transform: translateY(30px);
       transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
                   transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -232,11 +232,11 @@
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
       
-      // Elegant scale + fade entrance
+      // Slide up + fade entrance
       document.getElementById('loader').classList.add('hide');
       setTimeout(() => {
         wrap.style.opacity = '1';
-        wrap.style.transform = 'scale(1)';
+        wrap.style.transform = 'translateY(0)';
       }, 200);
     });
 
