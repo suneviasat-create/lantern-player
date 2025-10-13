@@ -1,95 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lantern Player</title>
-<style>
-  :root{
-    --bg:#171717;      /* exact dark background */
-    --text:#FFFFFF;    /* white for play icon + time */
-    --muted:#8c8c8c;   /* time label */
-    --wave:#8a8a8a;    /* unplayed waveform (mid-gray) */
-    --prog:#3a3a3a;    /* played part darker for Disco-like style */
+  <!-- Pre-paint background to remove white flash -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #171717; /* same as app background */
+      color: #FFFFFF;
+    }
+  </style>
 
-    --gutter:12px;
-    --wave-h:96px;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lantern Player</title>
 
-  html,body{
-    margin:0; padding:0; background:var(--bg);
-    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    color:var(--text);
-    -webkit-font-smoothing:antialiased;
-    overflow:hidden;
-  }
+  <style>
+    :root{
+      --bg:#171717;      /* exact dark background */
+      --text:#FFFFFF;    /* white for play icon + time */
+      --muted:#8c8c8c;   /* time label */
+      --wave:#8a8a8a;    /* unplayed waveform (mid-gray) */
+      --prog:#3a3a3a;    /* played part darker for Disco-like style */
 
-  .wrap{
-    width:100%;
-    max-width:700px;
-    margin:0 auto;
-    padding:0 var(--gutter);
-    box-sizing:border-box;
-  }
+      --gutter:12px;
+      --wave-h:96px;
+    }
 
-  #wave{
-    width:100%;
-    height:var(--wave-h);
-    background:transparent;
-    border-radius:12px;
-    overflow:hidden;
-  }
+    html,body{
+      margin:0; padding:0; background:var(--bg);
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      overflow:hidden;
+    }
 
-  .footerRow{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-top:12px;
-  }
+    .wrap{
+      width:100%;
+      max-width:700px;
+      margin:0 auto;
+      padding:0 var(--gutter);
+      box-sizing:border-box;
+    }
 
-  .time{
-    font-size:12px;
-    color:var(--muted);
-    letter-spacing:.2px;
-    min-width:42px;
-  }
+    #wave{
+      width:100%;
+      height:var(--wave-h);
+      background:transparent;
+      border-radius:12px;
+      overflow:hidden;
+    }
 
-  .controls{
-    flex:1;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-  }
+    .footerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:12px;
+    }
 
-  .playbtn{
-    width:64px;
-    height:64px;
-    border-radius:50%;
-    background:var(--bg);
-    border:2px solid #FFFFFF;
-    display:grid;
-    place-items:center;
-    cursor:pointer;
-    outline:none;
-  }
-  .playbtn svg{
-    width:24px;
-    height:24px;
-    fill:#FFFFFF;
-  }
-  .playbtn:focus,
-  .playbtn:hover,
-  .playbtn:active{
-    border:2px solid #FFFFFF;
-    background:var(--bg);
-  }
+    .time{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.2px;
+      min-width:42px;
+    }
 
-  @media (max-width:360px){
-    :root{ --wave-h:88px; }
-    .playbtn{ width:58px; height:58px; }
-    .playbtn svg{ width:22px; height:22px; }
-  }
-</style>
+    .controls{
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .playbtn{
+      width:64px;
+      height:64px;
+      border-radius:50%;
+      background:var(--bg);
+      border:2px solid #FFFFFF;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      outline:none;
+    }
+    .playbtn svg{
+      width:24px;
+      height:24px;
+      fill:#FFFFFF;
+    }
+    .playbtn:focus,
+    .playbtn:hover,
+    .playbtn:active{
+      border:2px solid #FFFFFF;
+      background:var(--bg);
+    }
+
+    @media (max-width:360px){
+      :root{ --wave-h:88px; }
+      .playbtn{ width:58px; height:58px; }
+      .playbtn svg{ width:22px; height:22px; }
+    }
+  </style>
 </head>
 <body>
   <div class="wrap">
