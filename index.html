@@ -24,7 +24,7 @@
       z-index: 9999;
     }
     
-    /* Pulsing sound bars loader - faster animation */
+    /* Pulsing sound bars loader */
     .loader-bars {
       display: flex;
       gap: 6px;
@@ -35,11 +35,11 @@
       width: 4px;
       background: #FFFFFF;
       border-radius: 2px;
-      animation: pulse-bar 0.9s ease-in-out infinite;
+      animation: pulse-bar 1.2s ease-in-out infinite;
     }
     .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.1s; height: 24px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.2s; height: 20px; }
+    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
+    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
     @keyframes pulse-bar {
       0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
       50% { transform: scaleY(1); opacity: 1; }
@@ -49,7 +49,7 @@
     #loader.hide { 
       opacity: 0; 
       pointer-events: none; 
-      transition: opacity 0.4s ease;
+      transition: opacity 0.3s ease;
     }
   </style>
 
@@ -104,8 +104,6 @@
       margin:0 auto;
       padding:0 var(--gutter);
       box-sizing:border-box;
-      opacity:0; /* Start hidden, will fade in */
-      transition: opacity 0.4s ease;
     }
 
     #wave{
@@ -222,7 +220,6 @@
 
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
-    const wrap = document.querySelector('.wrap');
     let dur = 0;
 
     ws.on('ready', ()=>{
@@ -230,11 +227,9 @@
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
       
-      // Smooth choreographed reveal: loader fades out, player fades in
-      document.getElementById('loader').classList.add('hide');
       setTimeout(() => {
-        wrap.style.opacity = '1';
-      }, 150); // Player appears as loader disappears
+        document.getElementById('loader').classList.add('hide');
+      }, 100);
     });
 
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
