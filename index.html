@@ -22,7 +22,7 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.4s ease;
     }
     
     /* Pulsing sound bars loader */
@@ -105,7 +105,7 @@
       padding:0 var(--gutter);
       box-sizing:border-box;
       opacity:0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.4s ease;
     }
 
     #wave{
@@ -230,7 +230,7 @@
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
       
-      // Super fast crossfade (150ms - barely noticeable but smooth)
+      // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
       document.getElementById('loader').classList.add('hide');
     });
