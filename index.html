@@ -14,21 +14,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Lantern Player</title>
 
-  <!-- Preconnect so JS loads faster -->
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <!-- Preload local Wavesurfer for faster first paint -->
+  <link rel="preload" href="./wavesurfer.min.js" as="script" />
 
-  <!-- Early JS: parse ?audio= and set a real <link rel="preload" as="audio"> -->
+  <!-- Early: if ?audio= is present, start preloading the audio bytes -->
   <script>
     (function () {
       try {
-        const p = new URLSearchParams(location.search);
-        const u = p.get('audio');
+        const u = new URLSearchParams(location.search).get('audio');
         if (u) {
           const l = document.createElement('link');
-          l.rel = 'preload';
-          l.as = 'audio';
-          l.href = u;
-          l.crossOrigin = 'anonymous';
+          l.rel = 'preload'; l.as = 'audio'; l.href = u; l.crossOrigin = 'anonymous';
           document.head.appendChild(l);
         }
       } catch (e) {}
@@ -71,7 +67,7 @@
       border-radius:12px;
       overflow:hidden;
     }
-    /* Ensure the first canvas paint is dark (iOS can flash white canvas) */
+    /* Keep canvas dark on first paint (prevents iOS white canvas flash) */
     #wave canvas { background-color:#171717; display:block; }
 
     /* Footer row */
@@ -142,10 +138,11 @@
   <!-- Hidden audio (created immediately so iOS can warm it) -->
   <audio id="media" preload="auto" playsinline></audio>
 
-  <script src="https://unpkg.com/wavesurfer.js@7"></script>
+  <!-- LOCAL Wavesurfer (put wavesurfer.min.js in the repo root) -->
+  <script src="./wavesurfer.min.js"></script>
   <script>
     // Fast init (no window.load)
-    const params   = new URLSearchParams(location.search);
+    const params    = new URLSearchParams(location.search);
     const AUDIO_URL = params.get('audio') || './demo.mp3';
 
     // Prepare audio immediately
@@ -171,7 +168,10 @@
     });
 
     // Timecodes
-    const fmt = s => (!isFinite(s)? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);
+    const fmt = s => (!isFinite(s)
+      ? '0:00'
+      : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`);  // <-- fixed template literal
+
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     let dur = 0;
