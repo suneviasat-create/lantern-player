@@ -13,17 +13,32 @@
     /* Loader renders IMMEDIATELY (before anything else) */
     #loader {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: #171717;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       z-index: 9999;
       transition: opacity 0.4s ease;
     }
     
     /* Pulsing sound bars loader */
-    .loader-bars { display: flex; gap: 6px; align-items: flex-end; height: 32px; }
-    .loader-bars span { width: 4px; background: #FFFFFF; border-radius: 2px; animation: pulse-bar 1.2s ease-in-out infinite; }
-    .loader-bars span:nth-child(1) { animation-delay: 0s;   height: 16px; }
+    .loader-bars {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      height: 32px;
+    }
+    .loader-bars span {
+      width: 4px;
+      background: #FFFFFF;
+      border-radius: 2px;
+      animation: pulse-bar 1.2s ease-in-out infinite;
+    }
+    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
     .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
     .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
     @keyframes pulse-bar {
@@ -32,7 +47,10 @@
     }
     
     /* Hide loader when ready */
-    #loader.hide { opacity: 0; pointer-events: none; }
+    #loader.hide { 
+      opacity: 0; 
+      pointer-events: none;
+    }
   </style>
 
   <meta charset="utf-8" />
@@ -145,124 +163,6 @@
       .playbtn{ width:58px; height:58px; }
       .playbtn svg{ width:22px; height:22px; }
     }
-
-    /* ========== SPOTIFY-STYLE LYRICS ========== */
-    
-    /* Lyrics toggle button - right side, subtle */
-    .lyricsToggle{
-      margin-top:16px;
-      text-align:right;
-    }
-    .lyricsToggle button{
-      background:transparent;
-      border:none;
-      color:#6a6a6a;
-      font-size:12px;
-      cursor:pointer;
-      padding:6px 12px;
-      border-radius:16px;
-      transition:all 0.2s ease;
-      font-family:inherit;
-      letter-spacing:0.2px;
-      outline:none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .lyricsToggle button:hover{
-      color:#FFFFFF;
-      background:rgba(255,255,255,0.04);
-    }
-    .lyricsToggle button:active{
-      transform:scale(0.95);
-    }
-
-    /* Lyrics container - TALLER so you can see multiple lines */
-    .lyricsContainer{
-      margin-top:20px;
-      max-height:0;
-      overflow:hidden;
-      transition:max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      position:relative;
-    }
-    .lyricsContainer.open{
-      max-height:280px; /* Much taller - shows 5-6 lines */
-    }
-
-    /* Scrollable lyrics area */
-    .lyricsScroll{
-      height:280px;
-      overflow-y:auto;
-      overflow-x:hidden;
-      position:relative;
-      padding:100px 0; /* Extra padding top/bottom for centering */
-      scrollbar-width:none;
-      -ms-overflow-style:none;
-      scroll-behavior:smooth; /* Smooth auto-scroll */
-    }
-    .lyricsScroll::-webkit-scrollbar{
-      display:none;
-    }
-
-    /* Gradient masks */
-    .lyricsScroll::before,
-    .lyricsScroll::after{
-      content:'';
-      position:absolute;
-      left:0;
-      right:0;
-      height:60px;
-      pointer-events:none;
-      z-index:2;
-    }
-    .lyricsScroll::before{
-      top:0;
-      background:linear-gradient(to bottom, #171717 0%, transparent 100%);
-    }
-    .lyricsScroll::after{
-      bottom:0;
-      background:linear-gradient(to top, #171717 0%, transparent 100%);
-    }
-
-    /* Individual lyric lines - compact */
-    .lyricLine{
-      text-align:center;
-      padding:10px 16px;
-      transition:all 0.3s ease;
-      cursor:pointer;
-      font-size:15px;
-      line-height:1.5;
-      color:#4a4a4a;
-      user-select:none;
-      -webkit-user-select:none;
-      border-radius:8px;
-      margin:4px 0;
-    }
-
-    /* Current line - highlighted */
-    .lyricLine.active{
-      color:#FFFFFF;
-      background:rgba(255,255,255,0.08);
-      font-weight:500;
-      letter-spacing:0.2px;
-    }
-
-    /* Next line - slightly brighter */
-    .lyricLine.next{
-      color:#6a6a6a;
-    }
-
-    /* Hover effect */
-    .lyricLine:hover{
-      color:#FFFFFF;
-      background:rgba(255,255,255,0.04);
-    }
-
-    /* Empty state */
-    .lyricsEmpty{
-      text-align:center;
-      padding:100px 20px;
-      color:#5a5a5a;
-      font-size:13px;
-    }
   </style>
 </head>
 <body>
@@ -276,7 +176,6 @@
   </div>
 
   <div class="wrap">
-    <!-- Player (untouched) -->
     <div id="wave"></div>
 
     <div class="footerRow">
@@ -287,18 +186,6 @@
         </button>
       </div>
       <div id="tRight" class="time">0:00</div>
-    </div>
-
-    <!-- Lyrics toggle - right aligned -->
-    <div class="lyricsToggle">
-      <button id="lyricsBtn">Lyrics</button>
-    </div>
-
-    <!-- Lyrics container - TALLER -->
-    <div class="lyricsContainer" id="lyricsContainer">
-      <div class="lyricsScroll" id="lyricsScroll">
-        <!-- Lines injected here -->
-      </div>
     </div>
   </div>
 
@@ -335,12 +222,15 @@
 
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
-    const wrap   = document.querySelector('.wrap');
+    const wrap = document.querySelector('.wrap');
+    let dur = 0;
 
     ws.on('ready', ()=>{
-      const dur = ws.getDuration() || media.duration || 0;
+      dur = ws.getDuration() || media.duration || 0;
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
+      
+      // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
       document.getElementById('loader').classList.add('hide');
     });
@@ -358,103 +248,9 @@
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
-    addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
 
-    /* ========== SPOTIFY-STYLE AUTO-SCROLL LYRICS ========== */
-
-    // Demo timestamped lyrics (shortened for display)
-    const lyrics = [
-      { time: 0,  text: "City wakes in silver light" },
-      { time: 3,  text: "Echoes fill the streets again" },
-      { time: 6,  text: "Chase the rhythm through the night" },
-      { time: 9,  text: "Noise becomes my friend" },
-      { time: 13, text: "Hold me close, world feels small" },
-      { time: 16, text: "Every heartbeat says it all" },
-      { time: 20, text: "We could run till morning calls" },
-      { time: 24, text: "In this glow we never fall" },
-      { time: 28, text: "Stars are fading, dawn arrives" },
-      { time: 32, text: "Dancing through the night" },
-      { time: 36, text: "Never want this feeling to end" },
-      { time: 40, text: "With you until the morning" }
-    ];
-
-    const lyricsBtn = document.getElementById('lyricsBtn');
-    const lyricsContainer = document.getElementById('lyricsContainer');
-    const lyricsScroll = document.getElementById('lyricsScroll');
-    let lyricsOpen = false;
-
-    // Toggle lyrics panel
-    lyricsBtn.onclick = ()=>{
-      lyricsOpen = !lyricsOpen;
-      lyricsContainer.classList.toggle('open', lyricsOpen);
-      lyricsBtn.textContent = lyricsOpen ? 'Hide' : 'Lyrics';
-    };
-
-    // Build lyrics HTML
-    if (lyrics.length > 0) {
-      lyricsScroll.innerHTML = lyrics.map((l, i) => 
-        `<div class="lyricLine" data-time="${l.time}" data-index="${i}">${l.text}</div>`
-      ).join('');
-    } else {
-      lyricsScroll.innerHTML = '<div class="lyricsEmpty">No lyrics available</div>';
-    }
-
-    const lyricLines = Array.from(document.querySelectorAll('.lyricLine'));
-
-    // CONSTANT AUTO-SCROLL like Spotify (updates every frame when playing)
-    let animationFrame;
-    function autoScroll() {
-      if (!lyricsOpen || media.paused) return;
-      
-      const currentTime = ws.getCurrentTime();
-      let activeIndex = 0;
-      
-      // Find current line
-      for (let i = 0; i < lyrics.length; i++) {
-        if (currentTime >= lyrics[i].time) {
-          activeIndex = i;
-        }
-      }
-
-      // Update classes
-      lyricLines.forEach((line, i) => {
-        line.classList.remove('active', 'next');
-        if (i === activeIndex) {
-          line.classList.add('active');
-        } else if (i === activeIndex + 1) {
-          line.classList.add('next');
-        }
-      });
-
-      // SMOOTH CONSTANT SCROLL - keeps current line centered
-      const activeLine = lyricLines[activeIndex];
-      if (activeLine) {
-        const targetScroll = activeLine.offsetTop - lyricsScroll.offsetHeight / 2 + activeLine.offsetHeight / 2;
-        lyricsScroll.scrollTop = targetScroll; // Direct assignment for smooth constant motion
-      }
-
-      animationFrame = requestAnimationFrame(autoScroll);
-    }
-
-    // Start/stop auto-scroll based on play state
-    media.addEventListener('play', ()=> {
-      if (lyricsOpen) autoScroll();
-    });
-    media.addEventListener('pause', ()=> {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-    });
-
-    // Also update when seeking
-    ws.on('seek', ()=> {
-      if (lyricsOpen && !media.paused) autoScroll();
-    });
-
-    // Tap line to seek
-    lyricLines.forEach(line => {
-      line.onclick = ()=>{
-        const time = parseFloat(line.dataset.time);
-        ws.seekTo(time / ws.getDuration());
-      };
+    addEventListener('keydown', e => {
+      if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
   </script>
 </body>
