@@ -146,69 +146,69 @@
       .playbtn svg{ width:22px; height:22px; }
     }
 
-    /* ========== PREMIUM LYRICS ========== */
+    /* ========== SPOTIFY-STYLE LYRICS ========== */
     
-    /* Toggle button - minimal and elegant */
+    /* Lyrics toggle button - right side, subtle */
     .lyricsToggle{
-      margin-top:20px;
-      text-align:center;
+      margin-top:16px;
+      text-align:right;
     }
     .lyricsToggle button{
       background:transparent;
       border:none;
-      color:#8c8c8c;
-      font-size:13px;
+      color:#6a6a6a;
+      font-size:12px;
       cursor:pointer;
-      padding:8px 16px;
-      border-radius:20px;
+      padding:6px 12px;
+      border-radius:16px;
       transition:all 0.2s ease;
       font-family:inherit;
-      letter-spacing:0.3px;
+      letter-spacing:0.2px;
       outline:none;
       -webkit-tap-highlight-color: transparent;
     }
     .lyricsToggle button:hover{
       color:#FFFFFF;
-      background:rgba(255,255,255,0.05);
+      background:rgba(255,255,255,0.04);
     }
     .lyricsToggle button:active{
-      transform:scale(0.96);
+      transform:scale(0.95);
     }
 
-    /* Lyrics container - slides open */
+    /* Lyrics container - compact, Spotify-style */
     .lyricsContainer{
-      margin-top:16px;
+      margin-top:20px;
       max-height:0;
       overflow:hidden;
       transition:max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       position:relative;
     }
     .lyricsContainer.open{
-      max-height:200px;
+      max-height:160px;
     }
 
-    /* Scrollable lyrics area with gradient masks */
+    /* Scrollable lyrics area - tighter spacing */
     .lyricsScroll{
-      height:200px;
+      height:160px;
       overflow-y:auto;
       overflow-x:hidden;
       position:relative;
-      padding:40px 0;
-      scrollbar-width:none; /* Firefox */
-      -ms-overflow-style:none; /* IE/Edge */
+      padding:30px 0;
+      scrollbar-width:none;
+      -ms-overflow-style:none;
     }
     .lyricsScroll::-webkit-scrollbar{
-      display:none; /* Chrome/Safari */
+      display:none;
     }
 
-    /* Gradient masks for elegant fade */
+    /* Gradient masks - subtler */
     .lyricsScroll::before,
     .lyricsScroll::after{
       content:'';
       position:absolute;
       left:0;
       right:0;
-      height:60px;
+      height:40px;
       pointer-events:none;
       z-index:2;
     }
@@ -221,52 +221,46 @@
       background:linear-gradient(to top, #171717 0%, transparent 100%);
     }
 
-    /* Individual lyric lines */
+    /* Individual lyric lines - COMPACT like Spotify */
     .lyricLine{
       text-align:center;
-      padding:12px 20px;
-      transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding:8px 16px;
+      transition:all 0.25s ease;
       cursor:pointer;
       font-size:15px;
-      line-height:1.5;
-      color:#5a5a5a;
-      opacity:0.4;
-      transform:scale(0.92);
+      line-height:1.4;
+      color:#4a4a4a;
       user-select:none;
       -webkit-user-select:none;
+      border-radius:8px;
+      margin:2px 0;
     }
 
-    /* Current line - PREMIUM karaoke style */
+    /* Current line - HIGHLIGHT instead of scale */
     .lyricLine.active{
-      font-size:19px;
-      font-weight:600;
       color:#FFFFFF;
-      opacity:1;
-      transform:scale(1);
-      letter-spacing:0.3px;
+      background:rgba(255,255,255,0.08);
+      font-weight:500;
+      letter-spacing:0.2px;
     }
 
-    /* Next line preview */
+    /* Next line - slightly brighter */
     .lyricLine.next{
-      color:#8c8c8c;
-      opacity:0.6;
-      transform:scale(0.96);
+      color:#6a6a6a;
     }
 
-    /* Hover effect for tap-to-seek */
+    /* Hover effect */
     .lyricLine:hover{
       color:#FFFFFF;
-      opacity:0.8;
-      transform:scale(0.98);
+      background:rgba(255,255,255,0.04);
     }
 
     /* Empty state */
     .lyricsEmpty{
       text-align:center;
-      padding:60px 20px;
+      padding:50px 20px;
       color:#5a5a5a;
-      font-size:14px;
-      font-style:italic;
+      font-size:13px;
     }
   </style>
 </head>
@@ -294,12 +288,12 @@
       <div id="tRight" class="time">0:00</div>
     </div>
 
-    <!-- Lyrics toggle button -->
+    <!-- Lyrics toggle - right aligned, subtle -->
     <div class="lyricsToggle">
-      <button id="lyricsBtn">Show Lyrics</button>
+      <button id="lyricsBtn">Lyrics</button>
     </div>
 
-    <!-- Lyrics container (slides open) -->
+    <!-- Compact lyrics container -->
     <div class="lyricsContainer" id="lyricsContainer">
       <div class="lyricsScroll" id="lyricsScroll">
         <!-- Lines injected here -->
@@ -365,20 +359,20 @@
     media.addEventListener('pause', syncIcon);
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
 
-    /* ========== PREMIUM LYRICS LOGIC ========== */
+    /* ========== SPOTIFY-STYLE LYRICS LOGIC ========== */
 
     // Demo timestamped lyrics
     const lyrics = [
-      { time: 0,  text: "When the city wakes in silver light" },
-      { time: 4,  text: "And echoes fill the streets again" },
-      { time: 8,  text: "I chase the rhythm through the night" },
-      { time: 12, text: "Until the noise becomes my friend" },
-      { time: 17, text: "Hold me close, the world feels small" },
-      { time: 21, text: "Every heartbeat says it all" },
-      { time: 26, text: "We could run till morning calls" },
-      { time: 30, text: "In this glow we never fall" },
-      { time: 35, text: "Stars are fading, dawn arrives" },
-      { time: 39, text: "But we keep dancing through the night" }
+      { time: 0,  text: "City wakes in silver light" },
+      { time: 3,  text: "Echoes fill the streets again" },
+      { time: 6,  text: "Chase the rhythm through the night" },
+      { time: 9,  text: "Noise becomes my friend" },
+      { time: 13, text: "Hold me close, world feels small" },
+      { time: 16, text: "Every heartbeat says it all" },
+      { time: 20, text: "We could run till morning calls" },
+      { time: 24, text: "In this glow we never fall" },
+      { time: 28, text: "Stars are fading, dawn arrives" },
+      { time: 32, text: "Dancing through the night" }
     ];
 
     const lyricsBtn = document.getElementById('lyricsBtn');
@@ -390,7 +384,7 @@
     lyricsBtn.onclick = ()=>{
       lyricsOpen = !lyricsOpen;
       lyricsContainer.classList.toggle('open', lyricsOpen);
-      lyricsBtn.textContent = lyricsOpen ? 'Hide Lyrics' : 'Show Lyrics';
+      lyricsBtn.textContent = lyricsOpen ? 'Hide' : 'Lyrics';
     };
 
     // Build lyrics HTML
@@ -404,18 +398,16 @@
 
     const lyricLines = Array.from(document.querySelectorAll('.lyricLine'));
 
-    // Update active line (karaoke style)
+    // Update active line (Spotify-style highlight)
     function updateLyrics(currentTime) {
       let activeIndex = 0;
       
-      // Find current line
       for (let i = 0; i < lyrics.length; i++) {
         if (currentTime >= lyrics[i].time) {
           activeIndex = i;
         }
       }
 
-      // Apply classes for premium styling
       lyricLines.forEach((line, i) => {
         line.classList.remove('active', 'next');
         if (i === activeIndex) {
@@ -425,7 +417,7 @@
         }
       });
 
-      // Smooth auto-scroll to keep current line centered
+      // Smooth auto-scroll
       const activeLine = lyricLines[activeIndex];
       if (activeLine && lyricsOpen) {
         const scrollTop = activeLine.offsetTop - lyricsScroll.offsetHeight / 2 + activeLine.offsetHeight / 2;
@@ -441,7 +433,6 @@
       };
     });
 
-    // Update lyrics as song plays
     ws.on('audioprocess', ()=> updateLyrics(ws.getCurrentTime()));
     ws.on('seek', ()=> updateLyrics(ws.getCurrentTime()));
   </script>
