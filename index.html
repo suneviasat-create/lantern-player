@@ -105,7 +105,8 @@
       padding:0 var(--gutter);
       box-sizing:border-box;
       opacity:0;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.4s ease, margin-top 0.25s ease;
+      /* margin-top will be calculated by JS to center the block */
     }
 
     #wave{
@@ -175,10 +176,10 @@
     </div>
   </div>
 
-  <div class="wrap">
+  <div class="wrap" id="playerBlock">
     <div id="wave"></div>
 
-    <div class="footerRow">
+    <div class="footerRow" id="footerRow">
       <div id="tLeft" class="time">0:00</div>
       <div class="controls">
         <button id="toggle" class="playbtn" aria-label="Play / Pause">
@@ -222,22 +223,29 @@
 
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
-    const wrap = document.querySelector('.wrap');
+    const wrap   = document.getElementById('playerBlock');
+    const loader = document.getElementById('loader');
+
     let dur = 0;
 
     ws.on('ready', ()=>{
       dur = ws.getDuration() || media.duration || 0;
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
-      
-      // Smooth simultaneous crossfade (loader out, player in)
+
+      // Smooth reveal
       wrap.style.opacity = '1';
-      document.getElementById('loader').classList.add('hide');
+      loader.classList.add('hide');
+
+      // Center the player block vertically within the viewport
+      centerPlayer();
     });
 
+    // Keep time up to date
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
+    // Play/Pause
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){
@@ -252,6 +260,41 @@
     addEventListener('keydown', e => {
       if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
+
+    // -------- Vertical centering helper (between header and Yes/No) --------
+    function centerPlayer(){
+      // Total height of the visible player block
+      const waveH   = document.getElementById('wave').offsetHeight;
+      const footH   = document.getElementById('footerRow').offsetHeight;
+      const blockH  = waveH + footH + 20; // include small spacing
+
+      const vh      = window.innerHeight;
+      // Reserve an approximate space for Glide header + Yes/No area.
+      // Tune these if you change the surrounding UI heights in Glide.
+      const reserveTop    = 120;  // approx title/artist area
+      const reserveBottom = 160;  // approx Yes/No/buttons area
+
+      // Available vertical space the block should sit inside
+      const available = Math.max(0, vh - reserveTop - reserveBottom);
+
+      // Center the block within that available area
+      let top = reserveTop + Math.max(0, (available - blockH) / 2);
+
+      // Clamp so it never squashes into top/bottom
+      const minTop = 40;                 // never too close to the top
+      const maxTop = vh - blockH - 180;  // leave room for bottom UI
+      top = Math.max(minTop, Math.min(top, maxTop));
+
+      // Apply as margin-top (animated via CSS)
+      wrap.style.marginTop = `${Math.round(top)}px`;
+    }
+
+    // Re-center on orientation/resize (without layout thrash)
+    let centerTimer;
+    function scheduleCenter(){ clearTimeout(centerTimer); centerTimer = setTimeout(centerPlayer, 100); }
+    window.addEventListener('resize', scheduleCenter);
+    window.addEventListener('orientationchange', scheduleCenter);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) scheduleCenter(); });
   </script>
 </body>
 </html>
