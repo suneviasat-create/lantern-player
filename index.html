@@ -175,7 +175,7 @@
       transform:scale(0.95);
     }
 
-    /* Lyrics container - compact, Spotify-style */
+    /* Lyrics container - TALLER so you can see multiple lines */
     .lyricsContainer{
       margin-top:20px;
       max-height:0;
@@ -184,31 +184,32 @@
       position:relative;
     }
     .lyricsContainer.open{
-      max-height:160px;
+      max-height:280px; /* Much taller - shows 5-6 lines */
     }
 
-    /* Scrollable lyrics area - tighter spacing */
+    /* Scrollable lyrics area */
     .lyricsScroll{
-      height:160px;
+      height:280px;
       overflow-y:auto;
       overflow-x:hidden;
       position:relative;
-      padding:30px 0;
+      padding:100px 0; /* Extra padding top/bottom for centering */
       scrollbar-width:none;
       -ms-overflow-style:none;
+      scroll-behavior:smooth; /* Smooth auto-scroll */
     }
     .lyricsScroll::-webkit-scrollbar{
       display:none;
     }
 
-    /* Gradient masks - subtler */
+    /* Gradient masks */
     .lyricsScroll::before,
     .lyricsScroll::after{
       content:'';
       position:absolute;
       left:0;
       right:0;
-      height:40px;
+      height:60px;
       pointer-events:none;
       z-index:2;
     }
@@ -221,22 +222,22 @@
       background:linear-gradient(to top, #171717 0%, transparent 100%);
     }
 
-    /* Individual lyric lines - COMPACT like Spotify */
+    /* Individual lyric lines - compact */
     .lyricLine{
       text-align:center;
-      padding:8px 16px;
-      transition:all 0.25s ease;
+      padding:10px 16px;
+      transition:all 0.3s ease;
       cursor:pointer;
       font-size:15px;
-      line-height:1.4;
+      line-height:1.5;
       color:#4a4a4a;
       user-select:none;
       -webkit-user-select:none;
       border-radius:8px;
-      margin:2px 0;
+      margin:4px 0;
     }
 
-    /* Current line - HIGHLIGHT instead of scale */
+    /* Current line - highlighted */
     .lyricLine.active{
       color:#FFFFFF;
       background:rgba(255,255,255,0.08);
@@ -258,7 +259,7 @@
     /* Empty state */
     .lyricsEmpty{
       text-align:center;
-      padding:50px 20px;
+      padding:100px 20px;
       color:#5a5a5a;
       font-size:13px;
     }
@@ -288,12 +289,12 @@
       <div id="tRight" class="time">0:00</div>
     </div>
 
-    <!-- Lyrics toggle - right aligned, subtle -->
+    <!-- Lyrics toggle - right aligned -->
     <div class="lyricsToggle">
       <button id="lyricsBtn">Lyrics</button>
     </div>
 
-    <!-- Compact lyrics container -->
+    <!-- Lyrics container - TALLER -->
     <div class="lyricsContainer" id="lyricsContainer">
       <div class="lyricsScroll" id="lyricsScroll">
         <!-- Lines injected here -->
@@ -359,9 +360,9 @@
     media.addEventListener('pause', syncIcon);
     addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.click(); } });
 
-    /* ========== SPOTIFY-STYLE LYRICS LOGIC ========== */
+    /* ========== SPOTIFY-STYLE AUTO-SCROLL LYRICS ========== */
 
-    // Demo timestamped lyrics
+    // Demo timestamped lyrics (shortened for display)
     const lyrics = [
       { time: 0,  text: "City wakes in silver light" },
       { time: 3,  text: "Echoes fill the streets again" },
@@ -372,7 +373,9 @@
       { time: 20, text: "We could run till morning calls" },
       { time: 24, text: "In this glow we never fall" },
       { time: 28, text: "Stars are fading, dawn arrives" },
-      { time: 32, text: "Dancing through the night" }
+      { time: 32, text: "Dancing through the night" },
+      { time: 36, text: "Never want this feeling to end" },
+      { time: 40, text: "With you until the morning" }
     ];
 
     const lyricsBtn = document.getElementById('lyricsBtn');
@@ -398,16 +401,22 @@
 
     const lyricLines = Array.from(document.querySelectorAll('.lyricLine'));
 
-    // Update active line (Spotify-style highlight)
-    function updateLyrics(currentTime) {
+    // CONSTANT AUTO-SCROLL like Spotify (updates every frame when playing)
+    let animationFrame;
+    function autoScroll() {
+      if (!lyricsOpen || media.paused) return;
+      
+      const currentTime = ws.getCurrentTime();
       let activeIndex = 0;
       
+      // Find current line
       for (let i = 0; i < lyrics.length; i++) {
         if (currentTime >= lyrics[i].time) {
           activeIndex = i;
         }
       }
 
+      // Update classes
       lyricLines.forEach((line, i) => {
         line.classList.remove('active', 'next');
         if (i === activeIndex) {
@@ -417,13 +426,28 @@
         }
       });
 
-      // Smooth auto-scroll
+      // SMOOTH CONSTANT SCROLL - keeps current line centered
       const activeLine = lyricLines[activeIndex];
-      if (activeLine && lyricsOpen) {
-        const scrollTop = activeLine.offsetTop - lyricsScroll.offsetHeight / 2 + activeLine.offsetHeight / 2;
-        lyricsScroll.scrollTo({ top: scrollTop, behavior: 'smooth' });
+      if (activeLine) {
+        const targetScroll = activeLine.offsetTop - lyricsScroll.offsetHeight / 2 + activeLine.offsetHeight / 2;
+        lyricsScroll.scrollTop = targetScroll; // Direct assignment for smooth constant motion
       }
+
+      animationFrame = requestAnimationFrame(autoScroll);
     }
+
+    // Start/stop auto-scroll based on play state
+    media.addEventListener('play', ()=> {
+      if (lyricsOpen) autoScroll();
+    });
+    media.addEventListener('pause', ()=> {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    });
+
+    // Also update when seeking
+    ws.on('seek', ()=> {
+      if (lyricsOpen && !media.paused) autoScroll();
+    });
 
     // Tap line to seek
     lyricLines.forEach(line => {
@@ -432,9 +456,6 @@
         ws.seekTo(time / ws.getDuration());
       };
     });
-
-    ws.on('audioprocess', ()=> updateLyrics(ws.getCurrentTime()));
-    ws.on('seek', ()=> updateLyrics(ws.getCurrentTime()));
   </script>
 </body>
 </html>
