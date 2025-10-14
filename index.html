@@ -8,13 +8,15 @@
       padding:0; 
       background:#171717; 
       color:#FFFFFF; 
-      height:100%;
     }
     
     /* Loader renders IMMEDIATELY (before anything else) */
     #loader {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: #171717;
       display: flex;
       align-items: center;
@@ -22,15 +24,33 @@
       z-index: 9999;
       transition: opacity 0.4s ease;
     }
+    
     /* Pulsing sound bars loader */
-    .loader-bars { display:flex; gap:6px; align-items:flex-end; height:32px; }
-    .loader-bars span { width:4px; background:#FFFFFF; border-radius:2px; animation:pulse-bar 1.2s ease-in-out infinite; }
-    .loader-bars span:nth-child(1){ animation-delay:0s;   height:16px; }
-    .loader-bars span:nth-child(2){ animation-delay:.2s; height:24px; }
-    .loader-bars span:nth-child(3){ animation-delay:.4s; height:20px; }
-    @keyframes pulse-bar{ 0%,100%{ transform:scaleY(.5); opacity:.6 } 50%{ transform:scaleY(1); opacity:1 } }
+    .loader-bars {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      height: 32px;
+    }
+    .loader-bars span {
+      width: 4px;
+      background: #FFFFFF;
+      border-radius: 2px;
+      animation: pulse-bar 1.2s ease-in-out infinite;
+    }
+    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
+    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
+    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
+    @keyframes pulse-bar {
+      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+    
     /* Hide loader when ready */
-    #loader.hide { opacity:0; pointer-events:none; }
+    #loader.hide { 
+      opacity: 0; 
+      pointer-events: none;
+    }
   </style>
 
   <meta charset="utf-8" />
@@ -68,6 +88,9 @@
 
       --gutter:12px;
       --wave-h:96px;
+
+      /* >>> CHANGE THIS NUMBER to push the player DOWN/UP on your iPhone <<< */
+      --player-top-offset: 140px; /* increase = move DOWN, decrease = move UP */
     }
 
     html,body{
@@ -78,8 +101,6 @@
       color:var(--text);
     }
 
-    /* Outer container – we'll compute margin-top to center this block
-       between Glide's title area and the Yes/No section */
     .wrap{
       width:100%;
       max-width:700px;
@@ -87,7 +108,9 @@
       padding:0 var(--gutter);
       box-sizing:border-box;
       opacity:0;
-      transition: opacity .4s ease, margin-top .25s ease;
+      transition: opacity 0.4s ease;
+      /* This margin pushes the whole player block down */
+      margin-top: var(--player-top-offset);
     }
 
     #wave{
@@ -96,15 +119,14 @@
       background:transparent;
       border-radius:12px;
       overflow:hidden;
-      margin-bottom:12px;
     }
-    /* Keep canvas dark on first paint (prevents iOS white canvas flash) */
     #wave canvas { background-color:#171717; display:block; }
 
     .footerRow{
       display:flex;
       align-items:center;
       justify-content:space-between;
+      margin-top:12px;
       gap:10px;
     }
 
@@ -135,9 +157,7 @@
       -webkit-tap-highlight-color: transparent;
     }
     .playbtn svg{
-      width:24px;
-      height:24px;
-      fill:#FFFFFF;
+      width:24px; height:24px; fill:#FFFFFF;
     }
     .playbtn:focus, .playbtn:hover, .playbtn:active{
       border-color:#FFFFFF; background:var(--bg);
@@ -160,10 +180,10 @@
     </div>
   </div>
 
-  <div class="wrap" id="playerBlock">
+  <div class="wrap">
     <div id="wave"></div>
 
-    <div class="footerRow" id="footerRow">
+    <div class="footerRow">
       <div id="tLeft" class="time">0:00</div>
       <div class="controls">
         <button id="toggle" class="playbtn" aria-label="Play / Pause">
@@ -207,22 +227,17 @@
 
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
-    const wrap   = document.getElementById('playerBlock');
-    const loader = document.getElementById('loader');
-    const footer = document.getElementById('footerRow');
-
+    const wrap = document.querySelector('.wrap');
     let dur = 0;
 
     ws.on('ready', ()=>{
       dur = ws.getDuration() || media.duration || 0;
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
-
+      
       // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
-      loader.classList.add('hide');
-
-      centerPlayer();
+      document.getElementById('loader').classList.add('hide');
     });
 
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
@@ -242,38 +257,6 @@
     addEventListener('keydown', e => {
       if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
-
-    // -------- Adaptive vertical centering between header and Yes/No --------
-    function centerPlayer(){
-      // block height (wave + row + spacing)
-      const blockH = document.getElementById('wave').offsetHeight +
-                     footer.offsetHeight + 20;
-
-      const vh = window.innerHeight;
-
-      // Reserve estimated spaces for Glide header and the Yes/No + contributor area.
-      // Adjust these two numbers if needed after you eyeball it on device.
-      const reserveTop    = 100;  // title/artist zone
-      const reserveBottom = 220;  // Yes/No + contributor/cards zone
-
-      const usable = Math.max(0, vh - reserveTop - reserveBottom);
-
-      // Bias slightly toward the top (feels visually centered on iOS)
-      let top = reserveTop + Math.max(0, (usable * 0.55) - (blockH / 2));
-
-      // Clamp so we never collide with top or bottom UI
-      const minTop = 40;
-      const maxTop = vh - reserveBottom - blockH;
-      top = Math.max(minTop, Math.min(top, maxTop));
-
-      wrap.style.marginTop = `${Math.round(top)}px`;
-    }
-
-    let t;
-    function scheduleCenter(){ clearTimeout(t); t = setTimeout(centerPlayer, 80); }
-    window.addEventListener('resize', scheduleCenter);
-    window.addEventListener('orientationchange', scheduleCenter);
-    document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) scheduleCenter(); });
   </script>
 </body>
 </html>
