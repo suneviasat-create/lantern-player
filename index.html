@@ -8,15 +8,13 @@
       padding:0; 
       background:#171717; 
       color:#FFFFFF; 
+      height:100%;
     }
     
     /* Loader renders IMMEDIATELY (before anything else) */
     #loader {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: #171717;
       display: flex;
       align-items: center;
@@ -24,33 +22,15 @@
       z-index: 9999;
       transition: opacity 0.4s ease;
     }
-    
     /* Pulsing sound bars loader */
-    .loader-bars {
-      display: flex;
-      gap: 6px;
-      align-items: flex-end;
-      height: 32px;
-    }
-    .loader-bars span {
-      width: 4px;
-      background: #FFFFFF;
-      border-radius: 2px;
-      animation: pulse-bar 1.2s ease-in-out infinite;
-    }
-    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
-    @keyframes pulse-bar {
-      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
-      50% { transform: scaleY(1); opacity: 1; }
-    }
-    
+    .loader-bars { display:flex; gap:6px; align-items:flex-end; height:32px; }
+    .loader-bars span { width:4px; background:#FFFFFF; border-radius:2px; animation:pulse-bar 1.2s ease-in-out infinite; }
+    .loader-bars span:nth-child(1){ animation-delay:0s;   height:16px; }
+    .loader-bars span:nth-child(2){ animation-delay:.2s; height:24px; }
+    .loader-bars span:nth-child(3){ animation-delay:.4s; height:20px; }
+    @keyframes pulse-bar{ 0%,100%{ transform:scaleY(.5); opacity:.6 } 50%{ transform:scaleY(1); opacity:1 } }
     /* Hide loader when ready */
-    #loader.hide { 
-      opacity: 0; 
-      pointer-events: none;
-    }
+    #loader.hide { opacity:0; pointer-events:none; }
   </style>
 
   <meta charset="utf-8" />
@@ -98,6 +78,8 @@
       color:var(--text);
     }
 
+    /* Outer container – we'll compute margin-top to center this block
+       between Glide's title area and the Yes/No section */
     .wrap{
       width:100%;
       max-width:700px;
@@ -105,8 +87,7 @@
       padding:0 var(--gutter);
       box-sizing:border-box;
       opacity:0;
-      transition: opacity 0.4s ease, margin-top 0.25s ease;
-      /* margin-top will be calculated by JS to center the block */
+      transition: opacity .4s ease, margin-top .25s ease;
     }
 
     #wave{
@@ -115,14 +96,15 @@
       background:transparent;
       border-radius:12px;
       overflow:hidden;
+      margin-bottom:12px;
     }
+    /* Keep canvas dark on first paint (prevents iOS white canvas flash) */
     #wave canvas { background-color:#171717; display:block; }
 
     .footerRow{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      margin-top:12px;
       gap:10px;
     }
 
@@ -153,7 +135,9 @@
       -webkit-tap-highlight-color: transparent;
     }
     .playbtn svg{
-      width:24px; height:24px; fill:#FFFFFF;
+      width:24px;
+      height:24px;
+      fill:#FFFFFF;
     }
     .playbtn:focus, .playbtn:hover, .playbtn:active{
       border-color:#FFFFFF; background:var(--bg);
@@ -225,6 +209,7 @@
     const tRight = document.getElementById('tRight');
     const wrap   = document.getElementById('playerBlock');
     const loader = document.getElementById('loader');
+    const footer = document.getElementById('footerRow');
 
     let dur = 0;
 
@@ -233,19 +218,16 @@
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
 
-      // Smooth reveal
+      // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
       loader.classList.add('hide');
 
-      // Center the player block vertically within the viewport
       centerPlayer();
     });
 
-    // Keep time up to date
     ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
     ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
 
-    // Play/Pause
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
     function syncIcon(){
@@ -261,40 +243,37 @@
       if (e.code === 'Space') { e.preventDefault(); btn.click(); }
     });
 
-    // -------- Vertical centering helper (between header and Yes/No) --------
+    // -------- Adaptive vertical centering between header and Yes/No --------
     function centerPlayer(){
-      // Total height of the visible player block
-      const waveH   = document.getElementById('wave').offsetHeight;
-      const footH   = document.getElementById('footerRow').offsetHeight;
-      const blockH  = waveH + footH + 20; // include small spacing
+      // block height (wave + row + spacing)
+      const blockH = document.getElementById('wave').offsetHeight +
+                     footer.offsetHeight + 20;
 
-      const vh      = window.innerHeight;
-      // Reserve an approximate space for Glide header + Yes/No area.
-      // Tune these if you change the surrounding UI heights in Glide.
-      const reserveTop    = 90;  // approx title/artist area
-      const reserveBottom = 190;  // approx Yes/No/buttons area
+      const vh = window.innerHeight;
 
-      // Available vertical space the block should sit inside
-      const available = Math.max(0, vh - reserveTop - reserveBottom);
+      // Reserve estimated spaces for Glide header and the Yes/No + contributor area.
+      // Adjust these two numbers if needed after you eyeball it on device.
+      const reserveTop    = 100;  // title/artist zone
+      const reserveBottom = 220;  // Yes/No + contributor/cards zone
 
-      // Center the block within that available area
-      let top = reserveTop + Math.max(0, (available - blockH) / 2);
+      const usable = Math.max(0, vh - reserveTop - reserveBottom);
 
-      // Clamp so it never squashes into top/bottom
-      const minTop = 40;                 // never too close to the top
-      const maxTop = vh - blockH - 180;  // leave room for bottom UI
+      // Bias slightly toward the top (feels visually centered on iOS)
+      let top = reserveTop + Math.max(0, (usable * 0.55) - (blockH / 2));
+
+      // Clamp so we never collide with top or bottom UI
+      const minTop = 40;
+      const maxTop = vh - reserveBottom - blockH;
       top = Math.max(minTop, Math.min(top, maxTop));
 
-      // Apply as margin-top (animated via CSS)
       wrap.style.marginTop = `${Math.round(top)}px`;
     }
 
-    // Re-center on orientation/resize (without layout thrash)
-    let centerTimer;
-    function scheduleCenter(){ clearTimeout(centerTimer); centerTimer = setTimeout(centerPlayer, 100); }
+    let t;
+    function scheduleCenter(){ clearTimeout(t); t = setTimeout(centerPlayer, 80); }
     window.addEventListener('resize', scheduleCenter);
     window.addEventListener('orientationchange', scheduleCenter);
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) scheduleCenter(); });
+    document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) scheduleCenter(); });
   </script>
 </body>
 </html>
