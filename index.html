@@ -5,7 +5,7 @@
     html, body { 
       margin:0; 
       padding:0; 
-      background:#171717; 
+      background:#000000; 
       color:#FFFFFF; 
     }
     
@@ -15,7 +15,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: #171717;
+      background: #000000;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -51,7 +51,7 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#171717" />
+  <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark only" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -74,10 +74,8 @@
 
   <style>
     :root{
-      --bg:#171717;
-      --muted:#8c8c8c;
       --wave-h:160px;
-      --player-top-offset: 40px;
+      --player-top-offset: 80px;
     }
 
     *{
@@ -87,7 +85,7 @@
     }
 
     html,body{
-      background:#171717;
+      background:#000000;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -113,7 +111,7 @@
       border-radius:0;
       overflow:hidden;
       cursor:pointer;
-      margin: 20px 0 24px 0;
+      margin: 60px 0 40px 0;
     }
     #wave canvas { 
       background-color:transparent; 
@@ -124,15 +122,21 @@
       display:flex;
       justify-content:center;
       align-items:center;
-      margin: 24px 0;
+      margin: 32px 0;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .controls.playing {
+      opacity: 0.6;
     }
 
     .playbtn{
-      width:64px;
-      height:64px;
+      width:72px;
+      height:72px;
       border-radius:50%;
-      background:var(--bg);
-      border:2px solid #FFFFFF;
+      background:transparent;
+      border:1.5px solid rgba(255,255,255,0.9);
       display:grid;
       place-items:center;
       cursor:pointer;
@@ -142,20 +146,19 @@
     }
     
     .playbtn svg{
-      width:24px; 
-      height:24px; 
-      fill:#FFFFFF;
+      width:22px; 
+      height:22px; 
+      fill:rgba(255,255,255,0.9);
       transition: all 0.2s ease;
     }
     
     .playbtn:active{
-      transform: scale(0.95);
-      border-color:#FFFFFF;
-      background:var(--bg);
+      transform: scale(0.96);
+      border-color:rgba(255,255,255,1);
     }
 
     .playbtn:active svg{
-      fill:#FFFFFF;
+      fill:rgba(255,255,255,1);
     }
 
     .footerRow{
@@ -163,13 +166,21 @@
       align-items:center;
       justify-content:space-between;
       margin-top:20px;
+      opacity: 0.5;
+      transition: opacity 0.3s ease;
+    }
+
+    .footerRow.active {
+      opacity: 1;
     }
 
     .time{
-      font-size:12px;
-      color:var(--muted);
-      letter-spacing:.2px;
-      min-width:42px;
+      font-size:11px;
+      color:#FFFFFF;
+      letter-spacing:1px;
+      min-width:45px;
+      font-weight:500;
+      font-variant-numeric: tabular-nums;
     }
 
     @media (max-width:360px){
@@ -254,10 +265,12 @@
 
     ws.on('audioprocess', ()=>{ 
       tLeft.textContent = fmt(ws.getCurrentTime()); 
+      footer.classList.add('active');
     });
     
     ws.on('seek', ()=>{ 
       tLeft.textContent = fmt(ws.getCurrentTime()); 
+      footer.classList.add('active');
     });
 
     // Make waveform clickable
@@ -277,6 +290,12 @@
       icon.innerHTML = isPlaying
         ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'
         : '<path d="M8 5v14l11-7z"/>';
+      
+      if (isPlaying) {
+        controls.classList.add('playing');
+      } else {
+        controls.classList.remove('playing');
+      }
     }
     
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
