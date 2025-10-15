@@ -113,14 +113,29 @@
       margin-top: var(--player-top-offset);
     }
 
+    /* Waveform container */
     #wave{
+      position:relative;           /* so the cursor can sit on top */
       width:100%;
       height:var(--wave-h);
       background:transparent;
       border-radius:12px;
       overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02); /* ultra-subtle frame */
     }
     #wave canvas { background-color:#171717; display:block; }
+
+    /* Premium cursor line with flash */
+    .cursor {
+      position:absolute; top:0; bottom:0; width:2px;
+      background:#FFFFFF; opacity:.75; pointer-events:none;
+      transform: translateX(-1px);
+    }
+    @keyframes cursor-flash {
+      0% { opacity: 1; }
+      100% { opacity: .3; }
+    }
+    .cursor.flash { animation: cursor-flash 140ms ease-out 1; }
 
     .footerRow{
       display:flex;
@@ -155,13 +170,15 @@
       cursor:pointer;
       outline:none;
       -webkit-tap-highlight-color: transparent;
+      transition: border-color .15s ease, transform .12s ease;
     }
     .playbtn svg{
       width:24px; height:24px; fill:#FFFFFF;
+      transition: opacity .12s ease;
     }
-    .playbtn:focus, .playbtn:hover, .playbtn:active{
-      border-color:#FFFFFF; background:var(--bg);
-    }
+    /* tiny tactile feel on tap */
+    .playbtn:active{ transform: scale(.98); }
+    .playbtn:focus, .playbtn:hover{ border-color:#FFFFFF; background:var(--bg); }
 
     @media (max-width:360px){
       :root{ --wave-h:88px; }
@@ -181,7 +198,10 @@
   </div>
 
   <div class="wrap">
-    <div id="wave"></div>
+    <div id="wave">
+      <!-- visual cursor (app-friendly "haptic") -->
+      <div class="cursor" id="cursor" style="left:0"></div>
+    </div>
 
     <div class="footerRow">
       <div id="tLeft" class="time">0:00</div>
@@ -212,7 +232,7 @@
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
       waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
       progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.3)',
+      cursorColor:'rgba(255,255,255,.0)',   // we draw our own cursor
       barWidth:2,
       barGap:1,
       normalize:true,
@@ -227,21 +247,48 @@
 
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
-    const wrap = document.querySelector('.wrap');
+    const wrap   = document.querySelector('.wrap');
+    const loader = document.getElementById('loader');
+    const cursor = document.getElementById('cursor');
     let dur = 0;
+
+    function updateCursor(px){
+      if (typeof px === 'number') {
+        cursor.style.left = px + 'px';
+        return;
+      }
+      const rect = document.getElementById('wave').getBoundingClientRect();
+      const pct  = (ws.getCurrentTime() / (ws.getDuration() || 1));
+      cursor.style.left = Math.round(pct * rect.width) + 'px';
+    }
 
     ws.on('ready', ()=>{
       dur = ws.getDuration() || media.duration || 0;
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
-      
-      // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
-      document.getElementById('loader').classList.add('hide');
+      loader.classList.add('hide');
+      updateCursor(); // initial
     });
 
-    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('audioprocess', ()=>{
+      tLeft.textContent = fmt(ws.getCurrentTime());
+      updateCursor();
+    });
+
+    ws.on('seek', ()=>{
+      tLeft.textContent = fmt(ws.getCurrentTime());
+      updateCursor();
+      // flash the cursor briefly for tactile feedback
+      cursor.classList.remove('flash'); void cursor.offsetWidth; cursor.classList.add('flash');
+    });
+
+    // Allow cursor to flash on direct touch start as well
+    document.getElementById('wave').addEventListener('pointerdown', (e)=>{
+      const rect = e.currentTarget.getBoundingClientRect();
+      updateCursor(Math.max(0, Math.min(rect.width, e.clientX - rect.left)));
+      cursor.classList.remove('flash'); void cursor.offsetWidth; cursor.classList.add('flash');
+    }, {passive:true});
 
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
