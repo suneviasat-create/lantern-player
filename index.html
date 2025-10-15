@@ -1,52 +1,48 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#171717;color:#FFFFFF;">
+<html lang="en" style="background:#000000;color:#FFFFFF;">
 <head>
-  <!-- CRITICAL: Paint dark + loader at the very first frame -->
   <style>
     html, body { 
       margin:0; 
       padding:0; 
-      background:#171717; 
+      background:#000000; 
       color:#FFFFFF; 
     }
     
-    /* Loader renders IMMEDIATELY (before anything else) */
     #loader {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: #171717;
+      background: #000000;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    /* Pulsing sound bars loader */
     .loader-bars {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       align-items: flex-end;
-      height: 32px;
+      height: 40px;
     }
     .loader-bars span {
-      width: 4px;
+      width: 3px;
       background: #FFFFFF;
       border-radius: 2px;
-      animation: pulse-bar 1.2s ease-in-out infinite;
+      animation: pulse-bar 1.4s ease-in-out infinite;
     }
-    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
+    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 20px; }
+    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 32px; }
+    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 26px; }
     @keyframes pulse-bar {
-      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+      0%, 100% { transform: scaleY(0.4); opacity: 0.4; }
       50% { transform: scaleY(1); opacity: 1; }
     }
     
-    /* Hide loader when ready */
     #loader.hide { 
       opacity: 0; 
       pointer-events: none;
@@ -55,16 +51,14 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#171717" />
+  <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark only" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Lantern Player</title>
 
-  <!-- Preload Wavesurfer -->
   <link rel="preload" href="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js" as="script" />
 
-  <!-- Early: if ?audio= is present, start preloading the audio bytes -->
   <script>
     (function () {
       try {
@@ -80,38 +74,33 @@
 
   <style>
     :root{
-      --bg:#171717;
-      --text:#FFFFFF;
-      --muted:#8c8c8c;
-      
-      /* Testing: lighter, more subtle waveform */
-      --wave:#5a5a5a;
-      --prog:#2a2a2a;
+      --wave-h:160px;
+      --player-top-offset: 80px;
+    }
 
-      --gutter:12px;
-      --wave-h:130px;
-
-      /* >>> CHANGE THIS NUMBER to push the player DOWN/UP on your iPhone <<< */
-      --player-top-offset: 70px; /* increase = move DOWN, decrease = move UP */
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
     }
 
     html,body{
-      background:var(--bg);
-      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:#000000;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing: grayscale;
       overflow:hidden;
-      color:var(--text);
+      color:#FFFFFF;
+      font-weight: 400;
     }
 
     .wrap{
       width:100%;
-      max-width:700px;
+      max-width:600px;
       margin:0 auto;
-      padding:0 var(--gutter);
-      box-sizing:border-box;
+      padding:0 32px;
       opacity:0;
-      transition: opacity 0.4s ease;
-      /* This margin pushes the whole player block down */
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       margin-top: var(--player-top-offset);
     }
 
@@ -119,61 +108,90 @@
       width:100%;
       height:var(--wave-h);
       background:transparent;
-      border-radius:12px;
+      border-radius:0;
       overflow:hidden;
+      cursor:pointer;
+      margin: 60px 0 40px 0;
     }
-    #wave canvas { background-color:#171717; display:block; }
-
-    .footerRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:12px;
-      gap:10px;
-    }
-
-    .time{
-      font-size:12px;
-      color:var(--muted);
-      letter-spacing:.2px;
-      min-width:42px;
+    #wave canvas { 
+      background-color:transparent; 
+      display:block; 
     }
 
     .controls{
-      flex:1;
       display:flex;
       justify-content:center;
       align-items:center;
+      margin: 32px 0;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .controls.playing {
+      opacity: 0.6;
     }
 
     .playbtn{
-      width:64px;
-      height:64px;
+      width:72px;
+      height:72px;
       border-radius:50%;
-      background:var(--bg);
-      border:2px solid #FFFFFF;
+      background:transparent;
+      border:1.5px solid rgba(255,255,255,0.9);
       display:grid;
       place-items:center;
       cursor:pointer;
       outline:none;
       -webkit-tap-highlight-color: transparent;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    
     .playbtn svg{
-      width:24px; height:24px; fill:#FFFFFF;
+      width:22px; 
+      height:22px; 
+      fill:rgba(255,255,255,0.9);
+      transition: all 0.2s ease;
     }
-    .playbtn:focus, .playbtn:hover, .playbtn:active{
-      border-color:#FFFFFF; background:var(--bg);
+    
+    .playbtn:active{
+      transform: scale(0.96);
+      border-color:rgba(255,255,255,1);
+    }
+
+    .playbtn:active svg{
+      fill:rgba(255,255,255,1);
+    }
+
+    .footerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:20px;
+      opacity: 0.5;
+      transition: opacity 0.3s ease;
+    }
+
+    .footerRow.active {
+      opacity: 1;
+    }
+
+    .time{
+      font-size:11px;
+      color:#FFFFFF;
+      letter-spacing:1px;
+      min-width:45px;
+      font-weight:500;
+      font-variant-numeric: tabular-nums;
     }
 
     @media (max-width:360px){
-      :root{ --wave-h:88px; }
-      .playbtn{ width:58px; height:58px; }
-      .playbtn svg{ width:22px; height:22px; }
+      :root{ --wave-h:120px; }
+      .wrap{ padding: 0 24px; }
+      .playbtn{ width:64px; height:64px; }
+      .playbtn svg{ width:20px; height:20px; }
     }
   </style>
 </head>
 <body>
-  <!-- Loader with pulsing sound bars -->
   <div id="loader">
     <div class="loader-bars">
       <span></span>
@@ -185,13 +203,14 @@
   <div class="wrap">
     <div id="wave"></div>
 
-    <div class="footerRow">
+    <div class="controls" id="controls">
+      <button id="toggle" class="playbtn" aria-label="Play / Pause">
+        <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+
+    <div class="footerRow" id="footer">
       <div id="tLeft" class="time">0:00</div>
-      <div class="controls">
-        <button id="toggle" class="playbtn" aria-label="Play / Pause">
-          <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-      </div>
       <div id="tRight" class="time">0:00</div>
     </div>
   </div>
@@ -212,11 +231,12 @@
       media,
       backend:'MediaElement',
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
-      waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
-      progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.3)',
-      barWidth:1,        // Changed from 2 to 1 (thinner)
-      barGap:3,          // Changed from 1 to 3 (more space)
+      waveColor:'rgba(255,255,255,0.25)',
+      progressColor:'rgba(255,255,255,0.85)',
+      cursorColor:'rgba(255,255,255,0)',
+      barWidth:2,
+      barGap:2,
+      barRadius:2,
       normalize:true,
       responsive:true,
       dragToSeek:true,
@@ -230,6 +250,8 @@
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     const wrap = document.querySelector('.wrap');
+    const footer = document.getElementById('footer');
+    const controls = document.getElementById('controls');
     let dur = 0;
 
     ws.on('ready', ()=>{
@@ -237,21 +259,45 @@
       tLeft.textContent  = '0:00';
       tRight.textContent = fmt(dur);
       
-      // Smooth simultaneous crossfade (loader out, player in)
       wrap.style.opacity = '1';
       document.getElementById('loader').classList.add('hide');
     });
 
-    ws.on('audioprocess', ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
-    ws.on('seek',        ()=>{ tLeft.textContent = fmt(ws.getCurrentTime()); });
+    ws.on('audioprocess', ()=>{ 
+      tLeft.textContent = fmt(ws.getCurrentTime()); 
+      footer.classList.add('active');
+    });
+    
+    ws.on('seek', ()=>{ 
+      tLeft.textContent = fmt(ws.getCurrentTime()); 
+      footer.classList.add('active');
+    });
+
+    // Make waveform clickable
+    document.getElementById('wave').addEventListener('click', (e) => {
+      // Don't trigger if clicking during drag
+      if (!ws.isPlaying()) {
+        ws.play();
+        syncIcon();
+      }
+    });
 
     const btn  = document.getElementById('toggle');
     const icon = document.getElementById('icon');
+    
     function syncIcon(){
-      icon.innerHTML = media.paused
-        ? '<path d="M8 5v14l11-7z"/>'
-        : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+      const isPlaying = !media.paused;
+      icon.innerHTML = isPlaying
+        ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'
+        : '<path d="M8 5v14l11-7z"/>';
+      
+      if (isPlaying) {
+        controls.classList.add('playing');
+      } else {
+        controls.classList.remove('playing');
+      }
     }
+    
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
     media.addEventListener('play',  syncIcon);
     media.addEventListener('pause', syncIcon);
