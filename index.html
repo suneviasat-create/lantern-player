@@ -20,26 +20,26 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .loader-bars {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       align-items: flex-end;
-      height: 32px;
+      height: 40px;
     }
     .loader-bars span {
-      width: 4px;
+      width: 3px;
       background: #FFFFFF;
       border-radius: 2px;
-      animation: pulse-bar 1.2s ease-in-out infinite;
+      animation: pulse-bar 1.4s ease-in-out infinite;
     }
-    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
+    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 20px; }
+    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 32px; }
+    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 26px; }
     @keyframes pulse-bar {
-      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+      0%, 100% { transform: scaleY(0.4); opacity: 0.4; }
       50% { transform: scaleY(1); opacity: 1; }
     }
     
@@ -102,7 +102,7 @@
       margin:0 auto;
       padding:0 32px;
       opacity:0;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       margin-top: var(--player-top-offset);
     }
 
@@ -124,7 +124,7 @@
       display:flex;
       justify-content:center;
       align-items:center;
-      margin: 16px 0 24px 0;
+      margin: 24px 0;
     }
 
     .playbtn{
@@ -162,8 +162,7 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      margin-top:12px;
-      gap:10px;
+      margin-top:20px;
     }
 
     .time{
@@ -193,15 +192,15 @@
   <div class="wrap">
     <div id="wave"></div>
 
-    <div class="footerRow">
-      <div id="tLeft" class="time">0:00</div>
-      <div id="tRight" class="time">0:00</div>
-    </div>
-
     <div class="controls" id="controls">
       <button id="toggle" class="playbtn" aria-label="Play / Pause">
         <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
       </button>
+    </div>
+
+    <div class="footerRow" id="footer">
+      <div id="tLeft" class="time">0:00</div>
+      <div id="tRight" class="time">0:00</div>
     </div>
   </div>
 
