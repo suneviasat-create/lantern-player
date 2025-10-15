@@ -20,26 +20,26 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.4s ease;
     }
     
     .loader-bars {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: flex-end;
-      height: 40px;
+      height: 32px;
     }
     .loader-bars span {
-      width: 3px;
+      width: 4px;
       background: #FFFFFF;
       border-radius: 2px;
-      animation: pulse-bar 1.4s ease-in-out infinite;
+      animation: pulse-bar 1.2s ease-in-out infinite;
     }
-    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 20px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 32px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 26px; }
+    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
+    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
+    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
     @keyframes pulse-bar {
-      0%, 100% { transform: scaleY(0.4); opacity: 0.4; }
+      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
       50% { transform: scaleY(1); opacity: 1; }
     }
     
@@ -102,7 +102,7 @@
       margin:0 auto;
       padding:0 32px;
       opacity:0;
-      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.4s ease;
       margin-top: var(--player-top-offset);
     }
 
@@ -124,7 +124,7 @@
       display:flex;
       justify-content:center;
       align-items:center;
-      margin: 24px 0;
+      margin: 16px 0 24px 0;
     }
 
     .playbtn{
