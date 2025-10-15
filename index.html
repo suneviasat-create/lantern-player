@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#000000;color:#FFFFFF;">
+<html lang="en" style="background:#171717;color:#FFFFFF;">
 <head>
   <style>
     html, body { 
@@ -20,26 +20,26 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.4s ease;
     }
     
     .loader-bars {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: flex-end;
-      height: 40px;
+      height: 32px;
     }
     .loader-bars span {
-      width: 3px;
+      width: 4px;
       background: #FFFFFF;
       border-radius: 2px;
-      animation: pulse-bar 1.4s ease-in-out infinite;
+      animation: pulse-bar 1.2s ease-in-out infinite;
     }
-    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 20px; }
-    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 32px; }
-    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 26px; }
+    .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
+    .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
+    .loader-bars span:nth-child(3) { animation-delay: 0.4s; height: 20px; }
     @keyframes pulse-bar {
-      0%, 100% { transform: scaleY(0.4); opacity: 0.4; }
+      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
       50% { transform: scaleY(1); opacity: 1; }
     }
     
@@ -74,6 +74,8 @@
 
   <style>
     :root{
+      --bg:#171717;
+      --muted:#8c8c8c;
       --wave-h:160px;
       --player-top-offset: 40px;
     }
@@ -100,7 +102,7 @@
       margin:0 auto;
       padding:0 32px;
       opacity:0;
-      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.4s ease;
       margin-top: var(--player-top-offset);
     }
 
@@ -118,25 +120,33 @@
       display:block; 
     }
 
+    .footerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:12px;
+    }
+
+    .time{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.2px;
+      min-width:42px;
+    }
+
     .controls{
       display:flex;
       justify-content:center;
       align-items:center;
       margin: 24px 0;
-      opacity: 1;
-      transition: opacity 0.3s ease;
-    }
-
-    .controls.playing {
-      opacity: 0.6;
     }
 
     .playbtn{
-      width:72px;
-      height:72px;
+      width:64px;
+      height:64px;
       border-radius:50%;
-      background:transparent;
-      border:1.5px solid rgba(255,255,255,0.9);
+      background:var(--bg);
+      border:2px solid #FFFFFF;
       display:grid;
       place-items:center;
       cursor:pointer;
@@ -146,41 +156,20 @@
     }
     
     .playbtn svg{
-      width:22px; 
-      height:22px; 
-      fill:rgba(255,255,255,0.9);
+      width:24px; 
+      height:24px; 
+      fill:#FFFFFF;
       transition: all 0.2s ease;
     }
     
     .playbtn:active{
-      transform: scale(0.96);
-      border-color:rgba(255,255,255,1);
+      transform: scale(0.95);
+      border-color:#FFFFFF;
+      background:var(--bg);
     }
 
     .playbtn:active svg{
-      fill:rgba(255,255,255,1);
-    }
-
-    .footerRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:20px;
-      opacity: 0.5;
-      transition: opacity 0.3s ease;
-    }
-
-    .footerRow.active {
-      opacity: 1;
-    }
-
-    .time{
-      font-size:11px;
-      color:#FFFFFF;
-      letter-spacing:1px;
-      min-width:45px;
-      font-weight:500;
-      font-variant-numeric: tabular-nums;
+      fill:#FFFFFF;
     }
 
     @media (max-width:360px){
@@ -203,15 +192,15 @@
   <div class="wrap">
     <div id="wave"></div>
 
+    <div class="footerRow" id="footer">
+      <div id="tLeft" class="time">0:00</div>
+      <div id="tRight" class="time">0:00</div>
+    </div>
+
     <div class="controls" id="controls">
       <button id="toggle" class="playbtn" aria-label="Play / Pause">
         <svg viewBox="0 0 24 24" id="icon"><path d="M8 5v14l11-7z"/></svg>
       </button>
-    </div>
-
-    <div class="footerRow" id="footer">
-      <div id="tLeft" class="time">0:00</div>
-      <div id="tRight" class="time">0:00</div>
     </div>
   </div>
 
@@ -250,8 +239,6 @@
     const tLeft  = document.getElementById('tLeft');
     const tRight = document.getElementById('tRight');
     const wrap = document.querySelector('.wrap');
-    const footer = document.getElementById('footer');
-    const controls = document.getElementById('controls');
     let dur = 0;
 
     ws.on('ready', ()=>{
@@ -265,17 +252,14 @@
 
     ws.on('audioprocess', ()=>{ 
       tLeft.textContent = fmt(ws.getCurrentTime()); 
-      footer.classList.add('active');
     });
     
     ws.on('seek', ()=>{ 
       tLeft.textContent = fmt(ws.getCurrentTime()); 
-      footer.classList.add('active');
     });
 
     // Make waveform clickable
     document.getElementById('wave').addEventListener('click', (e) => {
-      // Don't trigger if clicking during drag
       if (!ws.isPlaying()) {
         ws.play();
         syncIcon();
@@ -290,12 +274,6 @@
       icon.innerHTML = isPlaying
         ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'
         : '<path d="M8 5v14l11-7z"/>';
-      
-      if (isPlaying) {
-        controls.classList.add('playing');
-      } else {
-        controls.classList.remove('playing');
-      }
     }
     
     btn.onclick = ()=>{ ws.playPause(); syncIcon(); };
