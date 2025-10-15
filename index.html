@@ -22,10 +22,11 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(8px);
     }
     
-    /* Pulsing sound bars loader */
+    /* Pulsing sound bars loader with glow */
     .loader-bars {
       display: flex;
       gap: 6px;
@@ -34,9 +35,10 @@
     }
     .loader-bars span {
       width: 4px;
-      background: #FFFFFF;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 100%);
       border-radius: 2px;
       animation: pulse-bar 1.2s ease-in-out infinite;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
     }
     .loader-bars span:nth-child(1) { animation-delay: 0s; height: 16px; }
     .loader-bars span:nth-child(2) { animation-delay: 0.2s; height: 24px; }
@@ -62,7 +64,7 @@
   <title>Lantern Player</title>
 
   <!-- Preload local Wavesurfer for faster first paint -->
-  <link rel="preload" href="./wavesurfer.min.js" as="script" />
+  <link rel="preload" href="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js" as="script" />
 
   <!-- Early: if ?audio= is present, start preloading the audio bytes -->
   <script>
@@ -82,9 +84,9 @@
     :root{
       --bg:#171717;
       --text:#FFFFFF;
-      --muted:#8c8c8c;
-      --wave:#8a8a8a;
-      --prog:#3a3a3a;
+      --muted:rgba(255, 255, 255, 0.55);
+      --wave:#b8b8b8;
+      --prog:#4a4a4a;
 
       --gutter:12px;
       --wave-h:130px;
@@ -94,7 +96,7 @@
     }
 
     html,body{
-      background:var(--bg);
+      background: radial-gradient(ellipse at top, #1f1f1f 0%, #171717 50%);
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       -webkit-font-smoothing:antialiased;
       overflow:hidden;
@@ -108,33 +110,42 @@
       padding:0 var(--gutter);
       box-sizing:border-box;
       opacity:0;
-      transition: opacity 0.4s ease;
-      /* This margin pushes the whole player block down */
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       margin-top: var(--player-top-offset);
     }
 
     #wave{
       width:100%;
       height:var(--wave-h);
-      background:transparent;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius:12px;
       overflow:hidden;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
     }
-    #wave canvas { background-color:#171717; display:block; }
+    #wave canvas { 
+      background-color:transparent; 
+      display:block; 
+    }
 
     .footerRow{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      margin-top:12px;
+      margin-top:16px;
       gap:10px;
     }
 
     .time{
-      font-size:12px;
+      font-size:13px;
       color:var(--muted);
-      letter-spacing:.2px;
+      letter-spacing:0.5px;
       min-width:42px;
+      font-weight:500;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
     }
 
     .controls{
@@ -148,19 +159,49 @@
       width:64px;
       height:64px;
       border-radius:50%;
-      background:var(--bg);
-      border:2px solid #FFFFFF;
+      background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+      border:none;
       display:grid;
       place-items:center;
       cursor:pointer;
       outline:none;
       -webkit-tap-highlight-color: transparent;
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
     }
+    
+    .playbtn::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 50%;
+      padding: 2px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+    
     .playbtn svg{
-      width:24px; height:24px; fill:#FFFFFF;
+      width:24px; 
+      height:24px; 
+      fill:#FFFFFF;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .playbtn:focus, .playbtn:hover, .playbtn:active{
-      border-color:#FFFFFF; background:var(--bg);
+    
+    .playbtn:active{
+      transform: scale(0.95);
+      box-shadow: 
+        0 2px 12px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
     @media (max-width:360px){
@@ -196,10 +237,10 @@
 
   <audio id="media" preload="auto" playsinline></audio>
 
-  <script src="./wavesurfer.min.js"></script>
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
   <script>
     const params    = new URLSearchParams(location.search);
-    const AUDIO_URL = params.get('audio') || './demo.mp3';
+    const AUDIO_URL = params.get('audio') || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 
     const media = document.getElementById('media');
     media.src = AUDIO_URL;
@@ -212,7 +253,7 @@
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wave-h')),
       waveColor:getComputedStyle(document.documentElement).getPropertyValue('--wave').trim(),
       progressColor:getComputedStyle(document.documentElement).getPropertyValue('--prog').trim(),
-      cursorColor:'rgba(255,255,255,.3)',
+      cursorColor:'rgba(255,255,255,.25)',
       barWidth:2,
       barGap:1,
       normalize:true,
